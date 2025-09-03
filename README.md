@@ -46,41 +46,82 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 
 ## Supabase Setup (DB)
 
-Recommended tables (you can adapt later):
+ERD-aligned schema (supports Settings/Tables/Menu/Orders/Partial Payments):
 
 ```sql
+-- settings
+create table if not exists app_settings (
+  id uuid primary key default gen_random_uuid(),
+  num_tables int not null default 10,
+  updated_at timestamptz not null default now()
+);
+
 -- tables
 create table if not exists tables (
   id uuid primary key default gen_random_uuid(),
+  index_no int unique,
   name text not null,
-  seats int not null default 2,
-  is_occupied boolean not null default false
+  is_active boolean not null default true,
+  created_at timestamptz not null default now()
 );
 
+-- menu categories
+create table if not exists menu_categories (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  sort_order int not null default 0,
+  is_active boolean not null default true,
+  created_at timestamptz not null default now()
+);
+
+-- menu items
 create table if not exists menu_items (
   id uuid primary key default gen_random_uuid(),
+  menu_id text unique, -- custom menu ID for display
   name text not null,
+  category_id uuid references menu_categories(id) on delete set null,
   price int not null,
-  category text,
-  is_active boolean not null default true
+  is_active boolean not null default true,
+  created_at timestamptz not null default now(),
+  unique(category_id, name)
 );
 
-create table if not exists orders (
+-- bills / orders
+create table if not exists bills (
   id uuid primary key default gen_random_uuid(),
-  table_id uuid not null references tables(id),
-  people_count int not null default 1,
+  table_id uuid not null references tables(id) on delete cascade,
+  title text,
   status text not null default 'open',
-  created_at timestamp with time zone not null default now()
+  created_at timestamptz not null default now(),
+  closed_at timestamptz
 );
 
-create table if not exists order_items (
+-- bill items / order_items
+create table if not exists bill_items (
   id uuid primary key default gen_random_uuid(),
-  order_id uuid not null references orders(id) on delete cascade,
+  bill_id uuid not null references bills(id) on delete cascade,
   menu_item_id uuid not null references menu_items(id),
   quantity int not null default 1,
   unit_price int not null,
-  is_paid boolean not null default false
+  is_paid boolean not null default false,
+  created_at timestamptz not null default now()
 );
+
+-- payments
+create table if not exists payments (
+  id uuid primary key default gen_random_uuid(),
+  bill_id uuid not null references bills(id) on delete cascade,
+  amount int not null,
+  method text,
+  meta jsonb,
+  created_at timestamptz not null default now()
+);
+
+-- indexes
+create index if not exists idx_tables_index_no on tables(index_no);
+create index if not exists idx_items_bill_id on bill_items(bill_id);
+create index if not exists idx_items_menu_id on bill_items(menu_item_id);
+create index if not exists idx_items_is_paid on bill_items(is_paid);
 ```
 
 Row Level Security: enable RLS on all tables and add policies as needed.

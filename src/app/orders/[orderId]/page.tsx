@@ -1,116 +1,233 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
-import type { MenuItem, OrderItem } from "@/lib/types";
-import Link from "next/link";
 
-export default function OrderDetailPage({ params }: { params: { orderId: string } }) {
-  const [menu, setMenu] = useState<MenuItem[]>([]);
+type Order = {
+  id: string;
+  table_id: string;
+  note: string | null;
+  status: string;
+  created_at: string;
+};
+
+type OrderItem = {
+  id: string;
+  order_id: string;
+  menu_item_id: string;
+  quantity: number;
+  unit_price: number;
+  price: number;
+  is_paid: boolean;
+};
+
+type MenuItem = {
+  id: string;
+  menu_id?: string;
+  name: string;
+  price: number;
+};
+
+type Table = {
+  id: string;
+  name: string;
+};
+
+export default function OrderDetailPage({ params }: { params: Promise<{ orderId: string }> }) {
+  const [order, setOrder] = useState<Order | null>(null);
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
-  const [busy, setBusy] = useState(false);
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [table, setTable] = useState<Table | null>(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [orderId, setOrderId] = useState<string | null>(null);
 
-  const total = useMemo(() => {
-    return orderItems.reduce((s, oi) => s + oi.unit_price * oi.quantity, 0);
-  }, [orderItems]);
+  const loadOrderData = async (id: string) => {
+    try {
+      // 加载订单信息
+      const { data: orderData, error: orderError } = await supabase
+        .from("orders")
+        .select("*")
+        .eq("id", id)
+        .single();
+
+      if (orderError) throw orderError;
+      setOrder(orderData);
+
+      // 加载餐桌信息
+      if (orderData.table_id) {
+        const { data: tableData } = await supabase
+          .from("tables")
+          .select("id, name")
+          .eq("id", orderData.table_id)
+          .single();
+        setTable(tableData);
+      }
+
+      // 加载订单项目
+      const { data: itemsData, error: itemsError } = await supabase
+        .from("order_items")
+        .select("*")
+        .eq("order_id", id);
+
+      if (itemsError) throw itemsError;
+      setOrderItems(itemsData || []);
+
+      // 加载菜品信息
+      if (itemsData && itemsData.length > 0) {
+        const menuItemIds = itemsData.map(item => item.menu_item_id);
+        const { data: menuData } = await supabase
+          .from("menu_items")
+          .select("id, menu_id, name, price")
+          .in("id", menuItemIds);
+        setMenuItems(menuData || []);
+      }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    (async () => {
-      const [{ data: m, error: e1 }, { data: oi, error: e2 }] = await Promise.all([
-        supabase.from("menu_items").select("id, name, price, category, is_active").eq("is_active", true),
-        supabase
-          .from("order_items")
-          .select("id, order_id, menu_item_id, quantity, unit_price, is_paid")
-          .eq("order_id", params.orderId),
-      ]);
-      if (e1 || e2) {
-        setError(e1?.message || e2?.message || "");
-      } else {
-        setMenu((m as any) || []);
-        setOrderItems((oi as any) || []);
+    const getParams = async () => {
+      const resolvedParams = await params;
+      setOrderId(resolvedParams.orderId);
+      if (resolvedParams.orderId) {
+        loadOrderData(resolvedParams.orderId);
       }
-    })();
-  }, [params.orderId]);
+    };
+    getParams();
+  }, [params]);
 
-  const addItem = async (mi: MenuItem) => {
-    try {
-      setBusy(true);
-      const { data, error } = await supabase
-        .from("order_items")
-        .insert({ order_id: params.orderId, menu_item_id: mi.id, quantity: 1, unit_price: mi.price, is_paid: false })
-        .select("id, order_id, menu_item_id, quantity, unit_price, is_paid")
-        .single();
-      if (error) throw error;
-      setOrderItems((prev) => [...prev, data as any]);
-    } catch (err: any) {
-      setError(err?.message ?? "");
-    } finally {
-      setBusy(false);
-    }
+  const getMenuItemName = (menuItemId: string) => {
+    const item = menuItems.find(item => item.id === menuItemId);
+    return item?.name || '未知菜品';
   };
 
-  const updateQty = async (oi: OrderItem, delta: number) => {
-    const nextQty = Math.max(0, oi.quantity + delta);
-    if (nextQty === 0) {
-      await supabase.from("order_items").delete().eq("id", oi.id);
-      setOrderItems((prev) => prev.filter((x) => x.id !== oi.id));
-      return;
-    }
-    await supabase.from("order_items").update({ quantity: nextQty }).eq("id", oi.id);
-    setOrderItems((prev) => prev.map((x) => (x.id === oi.id ? { ...x, quantity: nextQty } : x)));
+  const getMenuItemId = (menuItemId: string) => {
+    const item = menuItems.find(item => item.id === menuItemId);
+    return item?.menu_id ? `#${item.menu_id}` : `#${String(item?.id || '').slice(-6)}`;
   };
 
-  return (
-    <div className="p-6 space-y-6">
-      <h1 className="text-xl font-semibold">点单</h1>
-      {error && <div className="text-red-600 text-sm">{error}</div>}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-        {menu.map((m) => (
-          <button
-            key={m.id}
-            disabled={busy}
-            onClick={() => addItem(m)}
-            className="border rounded p-3 text-left hover:bg-gray-50 disabled:opacity-50"
-          >
-            <div className="font-medium">{m.name}</div>
-            <div className="text-sm text-gray-500">￥{(m.price / 100).toFixed(2)}</div>
-          </button>
-        ))}
-      </div>
+  const totalAmount = orderItems.reduce((sum, item) => {
+    return sum + item.price;
+  }, 0);
 
-      <div className="space-y-2">
-        <h2 className="font-semibold">已选</h2>
-        <div className="space-y-2">
-          {orderItems.map((oi) => (
-            <div key={oi.id} className="flex items-center justify-between border rounded px-3 py-2">
-              <div className="flex items-center gap-3">
-                <span className="w-28 truncate">
-                  {menu.find((m) => m.id === oi.menu_item_id)?.name ?? ""}
-                </span>
-                <div className="text-gray-500">￥{(oi.unit_price / 100).toFixed(2)}</div>
+  const paidAmount = orderItems.reduce((sum, item) => {
+    return sum + (item.is_paid ? item.price : 0);
+  }, 0);
+
+  if (loading) return <div className="p-6">加载中...</div>;
+  if (error) return <div className="p-6 text-red-600">错误: {error}</div>;
+  if (!order) return <div className="p-6">订单不存在</div>;
+
+    return (
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-4xl mx-auto px-4">
+        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+          {/* 订单头部 */}
+          <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6">
+            <div className="flex justify-between items-start">
+              <div>
+                <h1 className="text-3xl font-bold mb-3">
+                  {order.note || `订单 #${order.id}`}
+                </h1>
+                <div className="space-y-1 text-blue-100">
+                  <p className="flex items-center">
+                    <span className="mr-2">🏠</span>
+                    餐桌: {table?.name || '未知餐桌'}
+                  </p>
+                  <p className="flex items-center">
+                    <span className="mr-2">🕒</span>
+                    创建时间: {new Date(order.created_at).toLocaleString()}
+                  </p>
+                  <p className="flex items-center">
+                    <span className="mr-2">📊</span>
+                    状态: {
+                      order.status === 'pending' ? '待处理' : 
+                      order.status === 'completed' ? '已完成' : 
+                      order.status === 'cancelled' ? '已取消' : order.status
+                    }
+                  </p>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <button className="border rounded px-2" onClick={() => updateQty(oi, -1)}>-</button>
-                <span className="w-6 text-center">{oi.quantity}</span>
-                <button className="border rounded px-2" onClick={() => updateQty(oi, 1)}>+</button>
+              <div className="text-right">
+                <div className="text-4xl font-bold mb-2">
+                  {(totalAmount / 100).toFixed(2)} Kr
+                </div>
+                {paidAmount > 0 && (
+                  <div className="text-blue-100">
+                    已付: {(paidAmount / 100).toFixed(2)} Kr
+                  </div>
+                )}
               </div>
             </div>
-          ))}
-        </div>
-        <div className="text-right font-medium">合计：￥{(total / 100).toFixed(2)}</div>
-      </div>
+          </div>
 
-      <div className="flex gap-3">
-        <Link
-          href={`/payment/${params.orderId}`}
-          className="rounded bg-black text-white px-4 py-2"
-        >
-          去结账
-        </Link>
+          {/* 菜品列表 */}
+          <div className="p-6">
+            <h2 className="text-2xl font-bold mb-6 text-gray-800">菜品明细</h2>
+            <div className="space-y-4">
+              {orderItems.map((item, index) => (
+                <div key={item.id} className="bg-gray-50 rounded-lg p-4 border-l-4 border-blue-500">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center mb-2">
+                        <span className="text-gray-500 text-sm mr-3">#{index + 1}</span>
+                        <div className="font-semibold text-lg text-gray-800">
+                          {getMenuItemId(item.menu_item_id)} {getMenuItemName(item.menu_item_id)}
+                        </div>
+                      </div>
+                      <div className="text-gray-600 ml-8">
+                        单价: {(item.unit_price / 100).toFixed(2)} Kr
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-gray-600 mb-1">
+                        {item.quantity} × {(item.unit_price / 100).toFixed(2)} Kr
+                      </div>
+                      <div className="text-xl font-bold text-green-600">
+                        {(item.price / 100).toFixed(2)} Kr
+                      </div>
+                      {item.is_paid && (
+                        <div className="text-xs text-green-600 mt-1">✓ 已付款</div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* 总计 */}
+            <div className="mt-8 pt-6 border-t-2 border-gray-200">
+              <div className="flex justify-between items-center bg-green-50 rounded-lg p-4">
+                <div className="text-xl font-bold text-gray-800">总计</div>
+                <div className="text-3xl font-bold text-green-600">
+                  {(totalAmount / 100).toFixed(2)} Kr
+                </div>
+              </div>
+            </div>
+
+            {/* 操作按钮 */}
+            <div className="flex gap-4 mt-8 pt-6 border-t border-gray-200">
+              <button 
+                onClick={() => window.print()}
+                className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+              >
+                🖨️ 打印订单
+              </button>
+              <button 
+                onClick={() => window.close()}
+                className="flex-1 bg-gray-200 text-gray-800 py-3 px-6 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+              >
+                ❌ 关闭
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
 }
-
-

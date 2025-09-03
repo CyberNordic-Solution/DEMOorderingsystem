@@ -7,6 +7,7 @@ export type Table = {
 
 export type MenuItem = {
   id: string;
+  menu_id?: string; // custom menu ID for display
   name: string;
   price: number; // cents or smallest unit
   category?: string | null;
