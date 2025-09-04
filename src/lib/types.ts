@@ -31,4 +31,26 @@ export type OrderItem = {
   is_paid: boolean;
 };
 
-
+export type AppSettings = {
+  id: string;
+  num_tables: number;
+  restaurant_name: string;
+  restaurant_address: string;
+  restaurant_phone: string;
+  restaurant_email: string;
+  currency: string;
+  tax_rate_dine_in: number;
+  tax_rate_takeaway: number;
+  service_charge: number;
+  business_hours: {
+    monday: { open: string; close: string; closed: boolean };
+    tuesday: { open: string; close: string; closed: boolean };
+    wednesday: { open: string; close: string; closed: boolean };
+    thursday: { open: string; close: string; closed: boolean };
+    friday: { open: string; close: string; closed: boolean };
+    saturday: { open: string; close: string; closed: boolean };
+    sunday: { open: string; close: string; closed: boolean };
+  };
+  created_at: string;
+  updated_at: string;
+};

@@ -62,7 +62,7 @@ export default function Navbar() {
               href="/history"
               className={`${itemBase} ${isActive("/history") ? "bg-white text-black" : ""}`}
             >
-              历史记录
+              支付记录
             </Link>
             <button
               onClick={logout}

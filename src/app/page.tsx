@@ -16,7 +16,10 @@ export default function Home() {
     try {
       setBusy(true);
       setError(null);
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
       if (error) throw error;
       router.replace("/tables");
     } catch (err: unknown) {
@@ -48,7 +51,7 @@ export default function Home() {
       <div className="w-full max-w-sm border rounded p-6 space-y-4">
         <h1 className="text-xl font-semibold text-center">登录</h1>
         {error && <div className="text-red-600 text-sm">{error}</div>}
-        
+
         <form onSubmit={onLogin} className="space-y-4">
           <div className="flex flex-col gap-1">
             <label className="text-sm text-gray-600">邮箱</label>
@@ -78,9 +81,9 @@ export default function Home() {
             登录
           </button>
         </form>
-        
+
         <div className="text-center text-sm text-gray-500">或</div>
-        
+
         <button
           onClick={onRegister}
           disabled={busy}
