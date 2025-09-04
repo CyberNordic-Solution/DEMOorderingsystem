@@ -22,31 +22,58 @@ export default function Navbar() {
 
   if (pathname === "/") return null;
 
+  const itemBase =
+    "border border-white/20 rounded px-3 py-1 text-sm hover:bg-white/10 transition";
+
+  const isActive = (p: string | RegExp) =>
+    typeof p === "string" ? pathname === p : p.test(pathname ?? "");
+
   return (
-         <header className="border-b sticky top-0 z-40 bg-black text-white">
-       <nav className="mx-auto max-w-6xl px-4 py-3 flex flex-wrap items-center justify-between gap-2">
-         <div className="flex items-center gap-2 order-1">
-           <button onClick={() => router.back()} className="border border-white/20 rounded px-3 py-1 text-sm hover:bg-white/10">
-             返回
-           </button>
-         </div>
-         <div className="flex items-center gap-3 order-3 w-full sm:w-auto">
-           <Link href="/tables" className={`border border-white/20 rounded px-3 py-1 text-sm ${pathname === "/tables" ? "bg-white text-black" : "hover:bg-white/10"}`}>
-             桌台
-           </Link>
-           <Link href="/settings" className={`border border-white/20 rounded px-3 py-1 text-sm ${pathname?.startsWith("/settings") ? "bg-white text-black" : "hover:bg-white/10"}`}>
-             设置
-           </Link>
-           <Link href="/history" className={`border border-white/20 rounded px-3 py-1 text-sm ${pathname === "/history" ? "bg-white text-black" : "hover:bg-white/10"}`}>
-             历史记录
-           </Link>
-           <button onClick={logout} disabled={busy} className="border border-white/20 rounded px-3 py-1 text-sm disabled:opacity-50 hover:bg-white/10">
-             退出登录
-           </button>
-         </div>
-       </nav>
-     </header>
+    <header className="sticky top-0 z-40 border-b bg-black text-white">
+      {/* 改为 w-full，让左右两侧真正贴边，保证“返回”与右侧按钮对齐到两端 */}
+      <nav className="w-full px-4 sm:px-6 lg:px-8 py-3">
+        <div className="flex items-center justify-between">
+          {/* 左侧：返回 */}
+          <div className="flex items-center">
+            <button
+              onClick={() => router.back()}
+              className={`${itemBase} ml-0`}
+              aria-label="返回上一页"
+            >
+              返回
+            </button>
+          </div>
+
+          {/* 右侧：导航与退出 */}
+          <div className="flex items-center gap-3">
+            <Link
+              href="/tables"
+              className={`${itemBase} ${isActive("/tables") ? "bg-white text-black" : ""}`}
+            >
+              桌台
+            </Link>
+            <Link
+              href="/settings"
+              className={`${itemBase} ${isActive(/^\/settings/) ? "bg-white text-black" : ""}`}
+            >
+              设置
+            </Link>
+            <Link
+              href="/history"
+              className={`${itemBase} ${isActive("/history") ? "bg-white text-black" : ""}`}
+            >
+              历史记录
+            </Link>
+            <button
+              onClick={logout}
+              disabled={busy}
+              className={`${itemBase} disabled:opacity-50`}
+            >
+              退出登录
+            </button>
+          </div>
+        </div>
+      </nav>
+    </header>
   );
 }
-
-
