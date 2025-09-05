@@ -1,25 +1,38 @@
 export type Table = {
   id: string;
-  name: string; // e.g. T1, T2
-  seats: number;
-  is_occupied: boolean;
+  name: string;
+  capacity: number;
+  created_at: string;
+  is_active: boolean;
+  index_no: number;
+};
+
+export type MenuCategory = {
+  id: string;
+  name: string;
+  sort_order: number;
+  created_at: string;
+  is_active: boolean;
 };
 
 export type MenuItem = {
   id: string;
-  menu_id?: string; // custom menu ID for display
   name: string;
-  price: number; // cents or smallest unit
-  category?: string | null;
+  category_id: string | null;
+  price: number;
   is_active: boolean;
+  created_at: string;
+  menu_id: string | null;
 };
 
 export type Order = {
   id: string;
   table_id: string;
-  people_count: number;
-  status: "open" | "paid" | "partial_paid";
+  status: string;
+  note: string | null;
   created_at: string;
+  closed_at: string | null;
+  completed_at: string | null;
 };
 
 export type OrderItem = {
@@ -27,8 +40,11 @@ export type OrderItem = {
   order_id: string;
   menu_item_id: string;
   quantity: number;
-  unit_price: number;
+  price: number;
+  note: string | null;
+  created_at: string;
   is_paid: boolean;
+  unit_price: number;
 };
 
 export type AppSettings = {

@@ -34,10 +34,17 @@ export default function MenuSettingsPage() {
       supabase
         .from("menu_items")
         .select("id, menu_id, name, price, category_id, is_active")
-        .order("id"),
+        .order("menu_id", { ascending: true }),
     ]);
     setCategories((cats as any) || []);
-    setItems((its as any) || []);
+    // 对菜品进行数字排序
+    const sortedItems = (its as any) || [];
+    sortedItems.sort((a: any, b: any) => {
+      const aId = parseInt(a.menu_id) || 0;
+      const bId = parseInt(b.menu_id) || 0;
+      return aId - bId;
+    });
+    setItems(sortedItems);
     if (!activeCat && cats && cats.length > 0)
       setActiveCat((cats[0] as any).id);
   };
@@ -78,6 +85,14 @@ export default function MenuSettingsPage() {
       .from("menu_items")
       .update({ is_active: !it.is_active })
       .eq("id", it.id);
+    load();
+  };
+
+  const deleteItem = async (it: Item) => {
+    if (!confirm(`确定要删除菜品 "${it.name}" 吗？此操作无法撤销。`)) {
+      return;
+    }
+    await supabase.from("menu_items").delete().eq("id", it.id);
     load();
   };
 
@@ -153,6 +168,30 @@ export default function MenuSettingsPage() {
     setSelectedItems(new Set());
   };
 
+  const deleteSelectedItems = async () => {
+    if (selectedItems.size === 0) return;
+
+    const itemNames = Array.from(selectedItems)
+      .map((id) => items.find((it) => it.id === id)?.name)
+      .filter(Boolean);
+
+    if (
+      !confirm(
+        `确定要删除选中的 ${selectedItems.size} 个菜品吗？\n\n${itemNames.join("\n")}\n\n此操作无法撤销。`,
+      )
+    ) {
+      return;
+    }
+
+    const deletes = Array.from(selectedItems).map((id) =>
+      supabase.from("menu_items").delete().eq("id", id),
+    );
+
+    await Promise.all(deletes);
+    load();
+    setSelectedItems(new Set());
+  };
+
   return (
     <div className="p-6">
       <h1 className="text-xl font-semibold mb-4">菜单设置</h1>
@@ -222,6 +261,12 @@ export default function MenuSettingsPage() {
                   >
                     批量上下架
                   </button>
+                  <button
+                    onClick={deleteSelectedItems}
+                    className="text-sm border rounded px-2 py-1 bg-red-100 text-red-600"
+                  >
+                    批量删除
+                  </button>
                 </>
               )}
             </div>
@@ -234,43 +279,55 @@ export default function MenuSettingsPage() {
                 key={it.id}
                 className="flex items-center justify-between border rounded px-3 py-2"
               >
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
                   <input
                     type="checkbox"
                     checked={selectedItems.has(it.id)}
                     onChange={() => toggleItemSelection(it.id)}
-                    className="w-4 h-4"
+                    className="w-4 h-4 flex-shrink-0"
                   />
                   {/* 状态指示灯 */}
                   <div
-                    className={`w-3 h-3 rounded-full ${
+                    className={`w-3 h-3 rounded-full flex-shrink-0 ${
                       it.is_active
                         ? "bg-green-500 shadow-lg shadow-green-500/50"
                         : "bg-red-500 shadow-lg shadow-red-500/50"
                     }`}
                     title={it.is_active ? "已上架" : "已下架"}
                   ></div>
-                  <div className="w-48 truncate">
-                    {it.menu_id
-                      ? `#${it.menu_id}`
-                      : `#${String(it.id).slice(-6)}`}{" "}
-                    {it.name}
+                  <div className="flex-1 min-w-0">
+                    <span className="font-medium">
+                      {it.menu_id
+                        ? `#${it.menu_id}`
+                        : `#${String(it.id).slice(-6)}`}{" "}
+                    </span>
+                    <span className="text-gray-700">{it.name}</span>
                   </div>
-                  <div>{(it.price / 100).toFixed(2)} Kr</div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    className="border rounded px-3 py-1"
-                    onClick={() => editItem(it)}
-                  >
-                    编辑
-                  </button>
-                  <button
-                    className="border rounded px-3 py-1"
-                    onClick={() => toggleItem(it)}
-                  >
-                    {it.is_active ? "下架" : "上架"}
-                  </button>
+                <div className="flex items-center gap-3 flex-shrink-0">
+                  <div className="text-right font-medium text-gray-900">
+                    {(it.price / 100).toFixed(2)} Kr
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      className="border rounded px-3 py-1 text-sm"
+                      onClick={() => editItem(it)}
+                    >
+                      编辑
+                    </button>
+                    <button
+                      className="border rounded px-3 py-1 text-sm"
+                      onClick={() => toggleItem(it)}
+                    >
+                      {it.is_active ? "下架" : "上架"}
+                    </button>
+                    <button
+                      className="border rounded px-3 py-1 text-sm bg-red-50 text-red-600 hover:bg-red-100"
+                      onClick={() => deleteItem(it)}
+                    >
+                      删除
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}

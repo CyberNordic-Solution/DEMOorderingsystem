@@ -2,36 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
-
-type Order = {
-  id: string;
-  table_id: string;
-  note: string | null;
-  status: string;
-  created_at: string;
-};
-
-type OrderItem = {
-  id: string;
-  order_id: string;
-  menu_item_id: string;
-  quantity: number;
-  unit_price: number;
-  price: number;
-  is_paid: boolean;
-};
-
-type MenuItem = {
-  id: string;
-  menu_id?: string;
-  name: string;
-  price: number;
-};
-
-type Table = {
-  id: string;
-  name: string;
-};
+import { Order, OrderItem, MenuItem, Table } from "@/lib/types";
 
 export default function OrderDetailPage({
   params,
@@ -160,6 +131,18 @@ export default function OrderDetailPage({
                           ? "已取消"
                           : order.status}
                   </p>
+                  {order.closed_at && (
+                    <p className="flex items-center">
+                      <span className="mr-2">🔒</span>
+                      关闭时间: {new Date(order.closed_at).toLocaleString()}
+                    </p>
+                  )}
+                  {order.completed_at && (
+                    <p className="flex items-center">
+                      <span className="mr-2">✅</span>
+                      完成时间: {new Date(order.completed_at).toLocaleString()}
+                    </p>
+                  )}
                 </div>
               </div>
               <div className="text-right">

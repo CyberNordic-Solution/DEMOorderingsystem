@@ -2,38 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
-
-type Table = { id: string; index_no: number; name: string; is_active: boolean };
-type Order = {
-  id: string;
-  table_id: string;
-  status: string;
-  note: string | null;
-  created_at: string;
-};
-type Category = {
-  id: string;
-  name: string;
-  sort_order: number;
-  is_active: boolean;
-};
-type MenuItem = {
-  id: string;
-  menu_id?: string;
-  name: string;
-  price: number;
-  category_id: string | null;
-  is_active: boolean;
-};
-type OrderItem = {
-  id: string;
-  order_id: string;
-  menu_item_id: string;
-  quantity: number;
-  unit_price: number;
-  price: number;
-  is_paid?: boolean;
-};
+import { Table, Order, MenuCategory, MenuItem, OrderItem } from "@/lib/types";
 
 export default function TablesPage() {
   const [tables, setTables] = useState<Table[]>([]);
@@ -43,7 +12,7 @@ export default function TablesPage() {
   const [error, setError] = useState<string | null>(null);
   const [showMenuModal, setShowMenuModal] = useState(false);
   const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [categories, setCategories] = useState<MenuCategory[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set());
@@ -83,9 +52,10 @@ export default function TablesPage() {
         .select("id, menu_id, name, price, category_id, is_active")
         .order("id"),
     ]);
-    setCategories((cats as Category[]) || []);
+    setCategories((cats as MenuCategory[]) || []);
     setMenuItems((items as MenuItem[]) || []);
-    if (cats && cats.length > 0) setActiveCategory((cats[0] as Category).id);
+    if (cats && cats.length > 0)
+      setActiveCategory((cats[0] as MenuCategory).id);
   };
 
   useEffect(() => {
@@ -963,7 +933,7 @@ function MenuSelectionModal({
   onCreateOrder,
   isAddingItems = false,
 }: {
-  categories: Category[];
+  categories: MenuCategory[];
   menuItems: MenuItem[];
   activeCategory: string | null;
   onCategoryChange: (categoryId: string) => void;
@@ -1037,7 +1007,7 @@ function MenuSelectionModal({
 
         <div className="flex-1 flex gap-4 overflow-hidden">
           {/* 左侧：菜单分类 */}
-          <div className="w-64 flex flex-col">
+          <div className="w-36 flex flex-col">
             <h3 className="font-medium mb-3 text-black">菜单分类</h3>
             <div className="flex-1 overflow-y-auto space-y-2">
               {categories.map((cat) => (
