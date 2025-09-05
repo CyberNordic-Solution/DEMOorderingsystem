@@ -49,13 +49,11 @@ export default function MenuSettingsPage() {
   const addCategory = async () => {
     const name = prompt("分类名");
     if (!name) return;
-    await supabase
-      .from("menu_categories")
-      .insert({
-        name,
-        sort_order: (categories?.length || 0) + 1,
-        is_active: true,
-      });
+    await supabase.from("menu_categories").insert({
+      name,
+      sort_order: (categories?.length || 0) + 1,
+      is_active: true,
+    });
     load();
   };
 
