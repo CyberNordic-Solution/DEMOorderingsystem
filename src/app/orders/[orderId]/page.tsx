@@ -2,38 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import { Order, OrderItem, MenuItem, Table } from "@/lib/types";
 
-type Order = {
-  id: string;
-  table_id: string;
-  note: string | null;
-  status: string;
-  created_at: string;
-};
-
-type OrderItem = {
-  id: string;
-  order_id: string;
-  menu_item_id: string;
-  quantity: number;
-  unit_price: number;
-  price: number;
-  is_paid: boolean;
-};
-
-type MenuItem = {
-  id: string;
-  menu_id?: string;
-  name: string;
-  price: number;
-};
-
-type Table = {
-  id: string;
-  name: string;
-};
-
-export default function OrderDetailPage({ params }: { params: Promise<{ orderId: string }> }) {
+export default function OrderDetailPage({
+  params,
+}: {
+  params: Promise<{ orderId: string }>;
+}) {
   const [order, setOrder] = useState<Order | null>(null);
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
@@ -75,7 +50,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ orderId:
 
       // 加载菜品信息
       if (itemsData && itemsData.length > 0) {
-        const menuItemIds = itemsData.map(item => item.menu_item_id);
+        const menuItemIds = itemsData.map((item) => item.menu_item_id);
         const { data: menuData } = await supabase
           .from("menu_items")
           .select("id, menu_id, name, price")
@@ -102,13 +77,15 @@ export default function OrderDetailPage({ params }: { params: Promise<{ orderId:
   }, [params]);
 
   const getMenuItemName = (menuItemId: string) => {
-    const item = menuItems.find(item => item.id === menuItemId);
-    return item?.name || '未知菜品';
+    const item = menuItems.find((item) => item.id === menuItemId);
+    return item?.name || "未知菜品";
   };
 
   const getMenuItemId = (menuItemId: string) => {
-    const item = menuItems.find(item => item.id === menuItemId);
-    return item?.menu_id ? `#${item.menu_id}` : `#${String(item?.id || '').slice(-6)}`;
+    const item = menuItems.find((item) => item.id === menuItemId);
+    return item?.menu_id
+      ? `#${item.menu_id}`
+      : `#${String(item?.id || "").slice(-6)}`;
   };
 
   const totalAmount = orderItems.reduce((sum, item) => {
@@ -123,7 +100,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ orderId:
   if (error) return <div className="p-6 text-red-600">错误: {error}</div>;
   if (!order) return <div className="p-6">订单不存在</div>;
 
-    return (
+  return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-4xl mx-auto px-4">
         <div className="bg-white rounded-xl shadow-lg overflow-hidden">
@@ -137,7 +114,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ orderId:
                 <div className="space-y-1 text-blue-100">
                   <p className="flex items-center">
                     <span className="mr-2">🏠</span>
-                    餐桌: {table?.name || '未知餐桌'}
+                    餐桌: {table?.name || "未知餐桌"}
                   </p>
                   <p className="flex items-center">
                     <span className="mr-2">🕒</span>
@@ -145,12 +122,27 @@ export default function OrderDetailPage({ params }: { params: Promise<{ orderId:
                   </p>
                   <p className="flex items-center">
                     <span className="mr-2">📊</span>
-                    状态: {
-                      order.status === 'pending' ? '待处理' : 
-                      order.status === 'completed' ? '已完成' : 
-                      order.status === 'cancelled' ? '已取消' : order.status
-                    }
+                    状态:{" "}
+                    {order.status === "pending"
+                      ? "待处理"
+                      : order.status === "completed"
+                        ? "已完成"
+                        : order.status === "cancelled"
+                          ? "已取消"
+                          : order.status}
                   </p>
+                  {order.closed_at && (
+                    <p className="flex items-center">
+                      <span className="mr-2">🔒</span>
+                      关闭时间: {new Date(order.closed_at).toLocaleString()}
+                    </p>
+                  )}
+                  {order.completed_at && (
+                    <p className="flex items-center">
+                      <span className="mr-2">✅</span>
+                      完成时间: {new Date(order.completed_at).toLocaleString()}
+                    </p>
+                  )}
                 </div>
               </div>
               <div className="text-right">
@@ -171,13 +163,21 @@ export default function OrderDetailPage({ params }: { params: Promise<{ orderId:
             <h2 className="text-2xl font-bold mb-6 text-gray-800">菜品明细</h2>
             <div className="space-y-4">
               {orderItems.map((item, index) => (
-                <div key={item.id} className="bg-gray-50 rounded-lg p-4 border-l-4 border-blue-500">
+                <div
+                  key={item.id}
+                  className="bg-gray-50 rounded-lg p-4 border-l-4 border-blue-500"
+                >
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       <div className="flex items-center mb-2">
-                        <span className="text-gray-500 text-sm mr-3">#{index + 1}</span>
-                        <div className="font-semibold text-lg text-gray-800">
-                          {getMenuItemId(item.menu_item_id)} {getMenuItemName(item.menu_item_id)}
+                        <span className="text-gray-500 text-sm mr-3">
+                          #{index + 1}
+                        </span>
+                        <div className="font-semibold text-lg text-gray-800 overflow-hidden">
+                          <span className="block truncate whitespace-nowrap">
+                            {getMenuItemId(item.menu_item_id)}{" "}
+                            {getMenuItemName(item.menu_item_id)}
+                          </span>
                         </div>
                       </div>
                       <div className="text-gray-600 ml-8">
@@ -186,13 +186,16 @@ export default function OrderDetailPage({ params }: { params: Promise<{ orderId:
                     </div>
                     <div className="text-right">
                       <div className="text-gray-600 mb-1">
-                        {item.quantity} × {(item.unit_price / 100).toFixed(2)} Kr
+                        {item.quantity} × {(item.unit_price / 100).toFixed(2)}{" "}
+                        Kr
                       </div>
                       <div className="text-xl font-bold text-green-600">
                         {(item.price / 100).toFixed(2)} Kr
                       </div>
                       {item.is_paid && (
-                        <div className="text-xs text-green-600 mt-1">✓ 已付款</div>
+                        <div className="text-xs text-green-600 mt-1">
+                          ✓ 已付款
+                        </div>
                       )}
                     </div>
                   </div>
@@ -212,13 +215,13 @@ export default function OrderDetailPage({ params }: { params: Promise<{ orderId:
 
             {/* 操作按钮 */}
             <div className="flex gap-4 mt-8 pt-6 border-t border-gray-200">
-              <button 
+              <button
                 onClick={() => window.print()}
                 className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors font-medium"
               >
                 🖨️ 打印订单
               </button>
-              <button 
+              <button
                 onClick={() => window.close()}
                 className="flex-1 bg-gray-200 text-gray-800 py-3 px-6 rounded-lg hover:bg-gray-300 transition-colors font-medium"
               >

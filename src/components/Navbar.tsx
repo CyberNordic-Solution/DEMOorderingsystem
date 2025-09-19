@@ -45,29 +45,29 @@ export default function Navbar() {
           </div>
 
           {/* 右侧：导航与退出 */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1 sm:gap-3 overflow-x-auto">
             <Link
               href="/tables"
-              className={`${itemBase} ${isActive("/tables") ? "bg-white text-black" : ""}`}
+              className={`${itemBase} ${isActive("/tables") ? "bg-white text-black" : ""} whitespace-nowrap flex-shrink-0`}
             >
               桌台
             </Link>
             <Link
               href="/settings"
-              className={`${itemBase} ${isActive(/^\/settings/) ? "bg-white text-black" : ""}`}
+              className={`${itemBase} ${isActive(/^\/settings/) ? "bg-white text-black" : ""} whitespace-nowrap flex-shrink-0`}
             >
               设置
             </Link>
             <Link
               href="/history"
-              className={`${itemBase} ${isActive("/history") ? "bg-white text-black" : ""}`}
+              className={`${itemBase} ${isActive("/history") ? "bg-white text-black" : ""} whitespace-nowrap flex-shrink-0`}
             >
-              历史记录
+              支付记录
             </Link>
             <button
               onClick={logout}
               disabled={busy}
-              className={`${itemBase} disabled:opacity-50`}
+              className={`${itemBase} disabled:opacity-50 whitespace-nowrap flex-shrink-0`}
             >
               退出登录
             </button>
