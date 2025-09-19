@@ -406,7 +406,7 @@ function BulkPaymentModal({
         // 加载菜单数据
         const { data: menuData } = await supabase
           .from("menu_items")
-          .select("id, menu_id, name, price");
+          .select("id, menu_id, name, price, category_id, is_active, created_at");
 
         setAllOrderItems(itemsData || []);
         setMenuItems(menuData || []);

@@ -76,15 +76,7 @@ export default function GeneralSettingsPage() {
       const data = allData && allData.length > 0 ? allData[0] : null;
 
       if (data) {
-        const defaultBusinessHours = {
-          monday: { open: "09:00", close: "22:00", closed: false },
-          tuesday: { open: "09:00", close: "22:00", closed: false },
-          wednesday: { open: "09:00", close: "22:00", closed: false },
-          thursday: { open: "09:00", close: "22:00", closed: false },
-          friday: { open: "09:00", close: "23:00", closed: false },
-          saturday: { open: "10:00", close: "23:00", closed: false },
-          sunday: { open: "10:00", close: "22:00", closed: false },
-        };
+        // 使用默认营业时间
 
         console.log("使用记录:", data);
 
@@ -115,7 +107,7 @@ export default function GeneralSettingsPage() {
 
   useEffect(() => {
     load();
-  }, []);
+  }, [load]);
 
   // 监听路径变化，当回到这个页面时刷新数据
   useEffect(() => {
@@ -172,15 +164,7 @@ export default function GeneralSettingsPage() {
           const data = allData && allData.length > 0 ? allData[0] : null;
 
           if (data) {
-            const defaultBusinessHours = {
-              monday: { open: "09:00", close: "22:00", closed: false },
-              tuesday: { open: "09:00", close: "22:00", closed: false },
-              wednesday: { open: "09:00", close: "22:00", closed: false },
-              thursday: { open: "09:00", close: "22:00", closed: false },
-              friday: { open: "09:00", close: "23:00", closed: false },
-              saturday: { open: "10:00", close: "23:00", closed: false },
-              sunday: { open: "10:00", close: "22:00", closed: false },
-            };
+            // 使用默认营业时间
 
             setSettings((prev) => ({
               restaurant_name: data.restaurant_name || "餐厅",
@@ -228,15 +212,7 @@ export default function GeneralSettingsPage() {
           const data = allData && allData.length > 0 ? allData[0] : null;
 
           if (data) {
-            const defaultBusinessHours = {
-              monday: { open: "09:00", close: "22:00", closed: false },
-              tuesday: { open: "09:00", close: "22:00", closed: false },
-              wednesday: { open: "09:00", close: "22:00", closed: false },
-              thursday: { open: "09:00", close: "22:00", closed: false },
-              friday: { open: "09:00", close: "23:00", closed: false },
-              saturday: { open: "10:00", close: "23:00", closed: false },
-              sunday: { open: "10:00", close: "22:00", closed: false },
-            };
+            // 使用默认营业时间
 
             setSettings((prev) => ({
               restaurant_name: data.restaurant_name || "餐厅",
@@ -382,15 +358,7 @@ export default function GeneralSettingsPage() {
               const data = allData && allData.length > 0 ? allData[0] : null;
 
               if (data) {
-                const defaultBusinessHours = {
-                  monday: { open: "09:00", close: "22:00", closed: false },
-                  tuesday: { open: "09:00", close: "22:00", closed: false },
-                  wednesday: { open: "09:00", close: "22:00", closed: false },
-                  thursday: { open: "09:00", close: "22:00", closed: false },
-                  friday: { open: "09:00", close: "23:00", closed: false },
-                  saturday: { open: "10:00", close: "23:00", closed: false },
-                  sunday: { open: "10:00", close: "22:00", closed: false },
-                };
+                // 使用默认营业时间
 
                 setSettings((prev) => ({
                   restaurant_name: data.restaurant_name || "餐厅",

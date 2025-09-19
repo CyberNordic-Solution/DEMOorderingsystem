@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabaseClient";
 
 type Category = {
@@ -25,7 +25,7 @@ export default function MenuSettingsPage() {
   const [error, setError] = useState<string | null>(null);
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
 
-  const load = async () => {
+  const load = useCallback(async () => {
     const [{ data: cats }, { data: its }] = await Promise.all([
       supabase
         .from("menu_categories")
@@ -36,22 +36,22 @@ export default function MenuSettingsPage() {
         .select("id, menu_id, name, price, category_id, is_active")
         .order("menu_id", { ascending: true }),
     ]);
-    setCategories((cats as any) || []);
+    setCategories((cats as Category[]) || []);
     // 对菜品进行数字排序
-    const sortedItems = (its as any) || [];
-    sortedItems.sort((a: any, b: any) => {
-      const aId = parseInt(a.menu_id) || 0;
-      const bId = parseInt(b.menu_id) || 0;
+    const sortedItems = (its as Item[]) || [];
+    sortedItems.sort((a: Item, b: Item) => {
+      const aId = parseInt(a.menu_id || "0") || 0;
+      const bId = parseInt(b.menu_id || "0") || 0;
       return aId - bId;
     });
     setItems(sortedItems);
     if (!activeCat && cats && cats.length > 0)
-      setActiveCat((cats[0] as any).id);
-  };
+      setActiveCat((cats[0] as Category).id);
+  }, [activeCat]);
 
   useEffect(() => {
     load().catch((e) => setError(String(e?.message || e)));
-  }, []);
+  }, [load]);
 
   const addCategory = async () => {
     const name = prompt("分类名");

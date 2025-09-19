@@ -49,9 +49,9 @@ type PaymentRecord = {
 
 export default function HistoryPage() {
   const [paymentRecords, setPaymentRecords] = useState<PaymentRecord[]>([]);
-  const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
+  const [, setOrderItems] = useState<OrderItem[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
-  const [tables, setTables] = useState<Table[]>([]);
+  const [, setTables] = useState<Table[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -79,7 +79,7 @@ export default function HistoryPage() {
       if (ordersData) {
         // 加载所有已完成订单的菜品
         const orderIds = ordersData.map((order) => order.id);
-        let itemsData: any[] = [];
+        let itemsData: OrderItem[] = [];
         if (orderIds.length > 0) {
           const { data: itemsResult } = await supabase
             .from("order_items")

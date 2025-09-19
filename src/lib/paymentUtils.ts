@@ -10,7 +10,7 @@ export interface UpdateOrderParams {
 
 export async function updateOrder(params: UpdateOrderParams): Promise<void> {
   try {
-    const updateData: any = {};
+    const updateData: Record<string, unknown> = {};
 
     if (params.status !== undefined) updateData.status = params.status;
     if (params.note !== undefined) updateData.note = params.note;

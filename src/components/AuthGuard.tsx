@@ -36,7 +36,7 @@ export default function AuthGuard({ children }: AuthGuardProps) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === "SIGNED_IN" && session.user) {
+      if (event === "SIGNED_IN" && session?.user) {
         setUser(session.user);
       }
       // 移除自动登出逻辑，让用户手动控制登出

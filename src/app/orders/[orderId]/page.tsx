@@ -15,7 +15,7 @@ export default function OrderDetailPage({
   const [table, setTable] = useState<Table | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [orderId, setOrderId] = useState<string | null>(null);
+  const [, setOrderId] = useState<string | null>(null);
 
   const loadOrderData = async (id: string) => {
     try {
@@ -33,7 +33,7 @@ export default function OrderDetailPage({
       if (orderData.table_id) {
         const { data: tableData } = await supabase
           .from("tables")
-          .select("id, name")
+          .select("id, name, capacity, created_at, is_active, index_no")
           .eq("id", orderData.table_id)
           .single();
         setTable(tableData);
@@ -53,7 +53,7 @@ export default function OrderDetailPage({
         const menuItemIds = itemsData.map((item) => item.menu_item_id);
         const { data: menuData } = await supabase
           .from("menu_items")
-          .select("id, menu_id, name, price")
+          .select("id, menu_id, name, price, category_id, is_active, created_at")
           .in("id", menuItemIds);
         setMenuItems(menuData || []);
       }
