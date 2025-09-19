@@ -1041,10 +1041,10 @@ function MenuSelectionModal({
                     className="flex items-center justify-between p-3 border rounded"
                   >
                     <div className="flex-1">
-                      <div className="font-medium text-black">
+                      <div className="font-medium text-black truncate whitespace-nowrap">
                         {item.menu_id
                           ? `#${item.menu_id}`
-                          : `#${String(item.id).slice(-6)}`}{" "}
+                          : `#${String(item.id).slice(-6)}`} {" "}
                         {item.name}
                       </div>
                       <div className="text-sm text-black">
@@ -1072,7 +1072,7 @@ function MenuSelectionModal({
                   className="flex items-center justify-between p-3 border rounded bg-gray-50"
                 >
                   <div className="flex-1">
-                    <div className="text-base font-medium text-black">
+                    <div className="text-base font-medium text-black truncate whitespace-nowrap">
                       {getItemName(item.itemId)}
                     </div>
                     <div className="text-sm text-black">

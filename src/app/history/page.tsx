@@ -228,9 +228,11 @@ export default function HistoryPage() {
                     className="flex justify-between items-center p-2 bg-white rounded"
                   >
                     <div className="flex-1">
-                      <div className="font-medium text-black">
-                        {getMenuItemId(item.menu_item_id)}{" "}
-                        {getMenuItemName(item.menu_item_id)}
+                      <div className="font-medium text-black overflow-hidden">
+                        <span className="block truncate whitespace-nowrap">
+                          {getMenuItemId(item.menu_item_id)}{" "}
+                          {getMenuItemName(item.menu_item_id)}
+                        </span>
                       </div>
                       <div className="text-sm text-gray-600">
                         {item.quantity} × {(item.unit_price / 100).toFixed(2)}{" "}

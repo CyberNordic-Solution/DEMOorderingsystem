@@ -199,12 +199,12 @@ export default function MenuSettingsPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-6">
         <aside className="md:sticky md:top-16 md:self-start">
-          <div className="flex md:flex-col gap-2 overflow-auto max-h-[60vh] pr-1">
+          <div className="flex md:flex-col gap-1 md:gap-2 overflow-auto max-h-[60vh] pr-1">
             {categories.map((c) => (
               <button
                 key={c.id}
                 onClick={() => setActiveCat(c.id)}
-                className={`text-left rounded px-3 py-2 border border-gray-200 dark:border-gray-700 ${
+                className={`text-left rounded px-2 md:px-3 py-1 md:py-2 border border-gray-200 dark:border-gray-700 ${
                   activeCat === c.id
                     ? "bg-gray-200 text-black dark:bg-gray-800 dark:text-white"
                     : "hover:bg-gray-200 hover:text-black dark:hover:bg-gray-800 dark:hover:text-white"
@@ -215,7 +215,7 @@ export default function MenuSettingsPage() {
             ))}
             <button
               onClick={addCategory}
-              className="rounded px-3 py-2 border border-gray-200 dark:border-gray-700 dark:text-gray-100"
+              className="rounded px-2 md:px-3 py-1 md:py-2 border border-gray-200 dark:border-gray-700 dark:text-gray-100"
             >
               + 新建分类
             </button>
@@ -299,14 +299,12 @@ export default function MenuSettingsPage() {
                     title={it.is_active ? "已上架" : "已下架"}
                   ></div>
                   <div className="flex-1 min-w-0 overflow-hidden">
-                    <span className="font-medium flex-shrink-0">
+                    <div className="font-medium text-gray-700 dark:text-gray-200 truncate whitespace-nowrap">
                       {it.menu_id
                         ? `#${it.menu_id}`
                         : `#${String(it.id).slice(-6)}`}{" "}
-                    </span>
-                    <span className="text-gray-700 dark:text-gray-200 block sm:truncate">
                       {it.name}
-                    </span>
+                    </div>
                   </div>
                 </div>
                 <div className="flex flex-col items-end gap-2 sm:flex-row sm:items-center sm:gap-3 flex-shrink-0 w-full sm:w-auto mt-1 sm:mt-0">

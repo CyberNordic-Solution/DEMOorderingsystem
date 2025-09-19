@@ -173,9 +173,11 @@ export default function OrderDetailPage({
                         <span className="text-gray-500 text-sm mr-3">
                           #{index + 1}
                         </span>
-                        <div className="font-semibold text-lg text-gray-800">
-                          {getMenuItemId(item.menu_item_id)}{" "}
-                          {getMenuItemName(item.menu_item_id)}
+                        <div className="font-semibold text-lg text-gray-800 overflow-hidden">
+                          <span className="block truncate whitespace-nowrap">
+                            {getMenuItemId(item.menu_item_id)}{" "}
+                            {getMenuItemName(item.menu_item_id)}
+                          </span>
                         </div>
                       </div>
                       <div className="text-gray-600 ml-8">
