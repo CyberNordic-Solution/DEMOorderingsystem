@@ -788,9 +788,10 @@ function OrderDetailModal({
       alert("已删除选中项目");
       onClose();
       window.location.reload();
-    } catch (e) {
+    } catch (e: unknown) {
       console.error("删除选中项目失败:", e);
-      alert("删除选中项目失败: " + String((e as any)?.message || e));
+      const message = e instanceof Error ? e.message : String(e);
+      alert("删除选中项目失败: " + message);
     } finally {
       setDeleting(false);
     }
@@ -807,9 +808,10 @@ function OrderDetailModal({
       alert("订单已删除");
       onClose();
       window.location.reload();
-    } catch (e) {
+    } catch (e: unknown) {
       console.error("删除订单失败:", e);
-      alert("删除订单失败: " + String((e as any)?.message || e));
+      const message = e instanceof Error ? e.message : String(e);
+      alert("删除订单失败: " + message);
     } finally {
       setDeleting(false);
     }
