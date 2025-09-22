@@ -193,18 +193,20 @@ export default function MenuSettingsPage() {
   };
 
   return (
-    <div className="p-6">
-      <h1 className="text-xl font-semibold mb-4 dark:text-white">菜单设置</h1>
+    <div className="p-4 sm:p-6">
+      <div className="flex items-center justify-between mb-3 sm:mb-4">
+        <h1 className="text-xl font-semibold dark:text-white">菜单设置</h1>
+      </div>
       {error && <div className="text-red-600 text-sm mb-4">{error}</div>}
 
-      <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-4 sm:gap-6">
         <aside className="md:sticky md:top-16 md:self-start">
-          <div className="flex md:flex-col gap-1 md:gap-2 overflow-auto max-h-[60vh] pr-1">
+          <div className="flex md:flex-col gap-2 overflow-auto max-h-[60vh] pr-1">
             {categories.map((c) => (
               <button
                 key={c.id}
                 onClick={() => setActiveCat(c.id)}
-                className={`text-left rounded px-2 md:px-3 py-1 md:py-2 border border-gray-200 dark:border-gray-700 ${
+                className={`text-left rounded px-3 py-2 border border-gray-200 dark:border-gray-700 ${
                   activeCat === c.id
                     ? "bg-gray-200 text-black dark:bg-gray-800 dark:text-white"
                     : "hover:bg-gray-200 hover:text-black dark:hover:bg-gray-800 dark:hover:text-white"
@@ -215,7 +217,7 @@ export default function MenuSettingsPage() {
             ))}
             <button
               onClick={addCategory}
-              className="rounded px-2 md:px-3 py-1 md:py-2 border border-gray-200 dark:border-gray-700 dark:text-gray-100"
+              className="rounded px-3 py-2 border border-gray-200 dark:border-gray-700 dark:text-gray-100"
             >
               + 新建分类
             </button>
@@ -224,7 +226,7 @@ export default function MenuSettingsPage() {
 
         <section className="space-y-2">
           {activeCat && (
-            <div className="flex items-center gap-2 mb-4 p-2 bg-gray-50 dark:bg-gray-900/50 rounded">
+            <div className="flex items-center flex-wrap gap-2 mb-4 p-2 bg-gray-50 dark:bg-gray-900/50 rounded">
               <span className="text-sm text-black dark:text-gray-100">
                 已选择 {selectedItems.size} 项
               </span>
@@ -240,13 +242,13 @@ export default function MenuSettingsPage() {
               </div>
               <button
                 onClick={selectAllItems}
-                className="text-sm border border-gray-200 dark:border-gray-700 rounded px-2 py-1 text-black dark:text-gray-100"
+                className="text-sm border border-gray-200 dark:border-gray-700 rounded px-3 py-2 text-black dark:text-gray-100"
               >
                 全选
               </button>
               <button
                 onClick={clearSelection}
-                className="text-sm border border-gray-200 dark:border-gray-700 rounded px-2 py-1 text-black dark:text-gray-100"
+                className="text-sm border border-gray-200 dark:border-gray-700 rounded px-3 py-2 text-black dark:text-gray-100"
               >
                 清除选择
               </button>
@@ -254,19 +256,19 @@ export default function MenuSettingsPage() {
                 <>
                   <button
                     onClick={updateSelectedItemsPrice}
-                    className="text-sm border border-gray-200 dark:border-gray-700 rounded px-2 py-1 bg-blue-100 text-black dark:bg-blue-900/40 dark:text-blue-100"
+                    className="text-sm border border-gray-200 dark:border-gray-700 rounded px-3 py-2 bg-blue-100 text-black dark:bg-blue-900/40 dark:text-blue-100"
                   >
                     批量改价
                   </button>
                   <button
                     onClick={toggleSelectedItems}
-                    className="text-sm border border-gray-200 dark:border-gray-700 rounded px-2 py-1 bg-orange-100 text-black dark:bg-orange-900/40 dark:text-orange-100"
+                    className="text-sm border border-gray-200 dark:border-gray-700 rounded px-3 py-2 bg-orange-100 text-black dark:bg-orange-900/40 dark:text-orange-100"
                   >
                     批量上下架
                   </button>
                   <button
                     onClick={deleteSelectedItems}
-                    className="text-sm border border-gray-200 dark:border-gray-700 rounded px-2 py-1 bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-300"
+                    className="text-sm border border-gray-200 dark:border-gray-700 rounded px-3 py-2 bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-300"
                   >
                     批量删除
                   </button>

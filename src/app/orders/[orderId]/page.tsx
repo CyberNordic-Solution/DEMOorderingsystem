@@ -53,7 +53,9 @@ export default function OrderDetailPage({
         const menuItemIds = itemsData.map((item) => item.menu_item_id);
         const { data: menuData } = await supabase
           .from("menu_items")
-          .select("id, menu_id, name, price, category_id, is_active, created_at")
+          .select(
+            "id, menu_id, name, price, category_id, is_active, created_at",
+          )
           .in("id", menuItemIds);
         setMenuItems(menuData || []);
       }
@@ -101,14 +103,14 @@ export default function OrderDetailPage({
   if (!order) return <div className="p-6">订单不存在</div>;
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-4xl mx-auto px-4">
+    <div className="min-h-screen bg-gray-50 py-4 sm:py-8">
+      <div className="max-w-4xl mx-auto px-3 sm:px-4">
         <div className="bg-white rounded-xl shadow-lg overflow-hidden">
           {/* 订单头部 */}
-          <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6">
+          <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-4 sm:p-6">
             <div className="flex justify-between items-start">
               <div>
-                <h1 className="text-3xl font-bold mb-3">
+                <h1 className="text-2xl sm:text-3xl font-bold mb-3">
                   {order.note || `订单 #${order.id}`}
                 </h1>
                 <div className="space-y-1 text-blue-100">
@@ -146,7 +148,7 @@ export default function OrderDetailPage({
                 </div>
               </div>
               <div className="text-right">
-                <div className="text-4xl font-bold mb-2">
+                <div className="text-3xl sm:text-4xl font-bold mb-2">
                   {(totalAmount / 100).toFixed(2)} Kr
                 </div>
                 {paidAmount > 0 && (
@@ -159,71 +161,101 @@ export default function OrderDetailPage({
           </div>
 
           {/* 菜品列表 */}
-          <div className="p-6">
-            <h2 className="text-2xl font-bold mb-6 text-gray-800">菜品明细</h2>
+          <div className="p-4 sm:p-6">
+            <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-gray-800">
+              菜品明细
+            </h2>
             <div className="space-y-4">
-              {orderItems.map((item, index) => (
-                <div
-                  key={item.id}
-                  className="bg-gray-50 rounded-lg p-4 border-l-4 border-blue-500"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center mb-2">
-                        <span className="text-gray-500 text-sm mr-3">
-                          #{index + 1}
-                        </span>
-                        <div className="font-semibold text-lg text-gray-800 overflow-hidden">
-                          <span className="block truncate whitespace-nowrap">
-                            {getMenuItemId(item.menu_item_id)}{" "}
-                            {getMenuItemName(item.menu_item_id)}
+              {orderItems
+                .slice()
+                .sort((a, b) => {
+                  // 按 menu_items 的自然顺序排序（基于 menu_id 的自然排序）
+                  const get = (id: string) =>
+                    menuItems.find((m) => m.id === id);
+                  const key = (mid?: string | null) => {
+                    const mm = get(mid || "");
+                    const raw = mm?.menu_id || "";
+                    const match = raw.match(/^(\D*)(\d*)$/);
+                    const prefix = (match?.[1] || "").toUpperCase();
+                    const num = match?.[2]
+                      ? parseInt(match[2] || "0", 10)
+                      : Number.POSITIVE_INFINITY;
+                    return { prefix, num };
+                  };
+                  const ak = key(a.menu_item_id);
+                  const bk = key(b.menu_item_id);
+                  if (ak.prefix !== bk.prefix)
+                    return ak.prefix.localeCompare(bk.prefix);
+                  if (ak.num !== bk.num) return ak.num - bk.num;
+                  return 0;
+                })
+                .map((item, index) => (
+                  <div
+                    key={item.id}
+                    className="bg-gray-50 rounded-lg p-4 border-l-4 border-blue-500"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center mb-2">
+                          <span className="text-gray-500 text-sm mr-3">
+                            #{index + 1}
                           </span>
+                          <div className="font-semibold text-base sm:text-lg text-gray-800 overflow-hidden">
+                            <span
+                              className="block truncate whitespace-nowrap"
+                              title={getMenuItemName(item.menu_item_id)}
+                            >
+                              {getMenuItemId(item.menu_item_id)}{" "}
+                              {getMenuItemName(item.menu_item_id)}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="text-gray-600 ml-8 text-sm">
+                          单价: {(item.unit_price / 100).toFixed(2)} Kr
                         </div>
                       </div>
-                      <div className="text-gray-600 ml-8">
-                        单价: {(item.unit_price / 100).toFixed(2)} Kr
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-gray-600 mb-1">
-                        {item.quantity} × {(item.unit_price / 100).toFixed(2)}{" "}
-                        Kr
-                      </div>
-                      <div className="text-xl font-bold text-green-600">
-                        {(item.price / 100).toFixed(2)} Kr
-                      </div>
-                      {item.is_paid && (
-                        <div className="text-xs text-green-600 mt-1">
-                          ✓ 已付款
+                      <div className="text-right">
+                        <div className="text-gray-600 mb-1 text-sm">
+                          {item.quantity} × {(item.unit_price / 100).toFixed(2)}{" "}
+                          Kr
                         </div>
-                      )}
+                        <div className="text-lg sm:text-xl font-bold text-green-600">
+                          {(item.price / 100).toFixed(2)} Kr
+                        </div>
+                        {item.is_paid && (
+                          <div className="text-xs text-green-600 mt-1">
+                            ✓ 已付款
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
             </div>
 
             {/* 总计 */}
-            <div className="mt-8 pt-6 border-t-2 border-gray-200">
+            <div className="mt-6 sm:mt-8 pt-4 sm:pt-6 border-t-2 border-gray-200">
               <div className="flex justify-between items-center bg-green-50 rounded-lg p-4">
-                <div className="text-xl font-bold text-gray-800">总计</div>
-                <div className="text-3xl font-bold text-green-600">
+                <div className="text-lg sm:text-xl font-bold text-gray-800">
+                  总计
+                </div>
+                <div className="text-2xl sm:text-3xl font-bold text-green-600">
                   {(totalAmount / 100).toFixed(2)} Kr
                 </div>
               </div>
             </div>
 
             {/* 操作按钮 */}
-            <div className="flex gap-4 mt-8 pt-6 border-t border-gray-200">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mt-6 sm:mt-8 pt-4 sm:pt-6 border-t border-gray-200 sticky bottom-0 bg-white/95 backdrop-blur p-3 sm:p-0">
               <button
                 onClick={() => window.print()}
-                className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors font-medium min-h-11"
               >
                 🖨️ 打印订单
               </button>
               <button
                 onClick={() => window.close()}
-                className="flex-1 bg-gray-200 text-gray-800 py-3 px-6 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+                className="flex-1 bg-gray-200 text-gray-800 py-3 px-6 rounded-lg hover:bg-gray-300 transition-colors font-medium min-h-11"
               >
                 ❌ 关闭
               </button>

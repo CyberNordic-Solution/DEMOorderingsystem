@@ -64,7 +64,9 @@ export default function SettingsPage() {
         .from("tables")
         .select("id, index_no");
       const existing = new Map<number, string>();
-      (rows || []).forEach((r: { id: string; index_no: number }) => existing.set(Number(r.index_no), r.id));
+      (rows || []).forEach((r: { id: string; index_no: number }) =>
+        existing.set(Number(r.index_no), r.id),
+      );
 
       // inserts
       const need = Array.from(

@@ -17,6 +17,7 @@ export default function TablesPage() {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set());
   const [showBulkPaymentModal, setShowBulkPaymentModal] = useState(false);
+  const [orderTotals, setOrderTotals] = useState<Record<string, number>>({});
 
   const load = async () => {
     const [{ data: ts }, { data: os }] = await Promise.all([
@@ -31,7 +32,8 @@ export default function TablesPage() {
     ]);
     setTables((ts as Table[]) || []);
     const map: Record<string, Order[]> = {};
-    (os as Order[] | null)?.forEach((o) => {
+    const ordersList = (os as Order[] | null) || [];
+    ordersList.forEach((o) => {
       // 只显示未完成的订单
       if (o.status !== "completed") {
         map[o.table_id] = map[o.table_id] || [];
@@ -39,23 +41,56 @@ export default function TablesPage() {
       }
     });
     setOrdersByTable(map);
+
+    // 计算每个订单总金额
+    try {
+      const orderIds = ordersList.map((o) => o.id);
+      if (orderIds.length > 0) {
+        const { data: items } = await supabase
+          .from("order_items")
+          .select("order_id, price")
+          .in("order_id", orderIds);
+        const totals: Record<string, number> = {};
+        (items as { order_id: string; price: number }[] | null)?.forEach(
+          (it) => {
+            totals[it.order_id] = (totals[it.order_id] || 0) + (it.price || 0);
+          },
+        );
+        setOrderTotals(totals);
+      } else {
+        setOrderTotals({});
+      }
+    } catch (e) {
+      // 忽略金额计算错误，保持页面可用
+      console.error("加载订单金额失败", e);
+    }
   };
 
   const loadMenuData = async () => {
-    const [{ data: cats }, { data: items }] = await Promise.all([
-      supabase
-        .from("menu_categories")
-        .select("id, name, sort_order, is_active")
-        .order("sort_order"),
-      supabase
-        .from("menu_items")
-        .select("id, menu_id, name, price, category_id, is_active")
-        .order("id"),
-    ]);
-    setCategories((cats as MenuCategory[]) || []);
-    setMenuItems((items as MenuItem[]) || []);
-    if (cats && cats.length > 0)
-      setActiveCategory((cats[0] as MenuCategory).id);
+    try {
+      const [{ data: cats, error: catErr }, { data: items, error: itemErr }] =
+        await Promise.all([
+          supabase
+            .from("menu_categories")
+            .select("id, name, sort_order, is_active")
+            .order("sort_order"),
+          supabase
+            .from("menu_items")
+            .select("id, menu_id, name, price, category_id, is_active")
+            .order("id"),
+        ]);
+      if (catErr) throw catErr;
+      if (itemErr) throw itemErr;
+
+      const catsArr = ((cats as MenuCategory[]) || []).slice();
+      setCategories(catsArr);
+      setMenuItems(((items as MenuItem[]) || []).slice());
+      if (catsArr.length > 0) setActiveCategory(catsArr[0].id);
+      if (catsArr.length === 0)
+        setError("没有可用的菜单分类，请先到菜单设置中添加");
+    } catch (e: unknown) {
+      setError(`加载菜单失败: ${e instanceof Error ? e.message : String(e)}`);
+    }
   };
 
   useEffect(() => {
@@ -212,6 +247,9 @@ export default function TablesPage() {
         .select("*")
         .eq("order_id", orderId);
 
+      // 为避免“未知菜品”与加菜价格为 0 的问题，这里加载完整菜单数据
+      await loadMenuData();
+
       setSelectedOrder(orderData);
       setSelectedTableId(orderData.table_id); // 设置餐桌ID，用于加菜
       setOrderItems(itemsData || []);
@@ -222,22 +260,16 @@ export default function TablesPage() {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-xl font-semibold">餐桌</h1>
-        <button
-          onClick={() => load().catch((e) => setError(String(e?.message || e)))}
-          className="px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded hover:from-green-600 hover:to-green-700 transition-all duration-200 font-medium shadow-md hover:shadow-lg transform hover:scale-105"
-        >
-          🔄 刷新
-        </button>
+        <h1 className="text-lg sm:text-xl font-semibold">餐桌</h1>
       </div>
       {error && <div className="text-red-600 text-sm">{error}</div>}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {tables.map((t) => (
-          <div key={t.id} className="border rounded p-3 space-y-2">
+          <div key={t.id} className="border rounded p-4 sm:p-3 space-y-2">
             <div className="flex justify-between items-center">
-              <div className="font-medium">{t.name}</div>
+              <div className="font-medium text-base sm:text-sm">{t.name}</div>
               <div className="text-xs text-gray-500">
                 {(ordersByTable[t.id] || []).length} 个订单
               </div>
@@ -245,23 +277,23 @@ export default function TablesPage() {
 
             {/* 批量操作按钮 */}
             {(ordersByTable[t.id] || []).length > 0 && (
-              <div className="flex gap-2 text-xs">
+              <div className="flex flex-wrap gap-2 text-xs">
                 <button
                   onClick={() => selectAllOrders(t.id)}
-                  className="px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+                  className="px-2 py-2 sm:py-1 bg-blue-500 text-white rounded hover:bg-blue-600 w-full sm:w-auto min-h-11 sm:min-h-0"
                 >
                   全选
                 </button>
                 <button
                   onClick={clearOrderSelection}
-                  className="px-2 py-1 bg-gray-500 text-white rounded hover:bg-gray-600"
+                  className="px-2 py-2 sm:py-1 bg-gray-500 text-white rounded hover:bg-gray-600 w-full sm:w-auto min-h-11 sm:min-h-0"
                 >
                   清除
                 </button>
                 {selectedOrders.size > 0 && (
                   <button
                     onClick={handleBulkPayment}
-                    className="px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600"
+                    className="px-2 py-2 sm:py-1 bg-green-500 text-white rounded hover:bg-green-600 w-full sm:w-auto min-h-11 sm:min-h-0"
                   >
                     批量付款 ({selectedOrders.size})
                   </button>
@@ -270,48 +302,67 @@ export default function TablesPage() {
             )}
 
             <div className="space-y-2">
-              {(ordersByTable[t.id] || []).map((o) => (
-                <div
-                  key={o.id}
-                  className={`border rounded p-2 text-sm flex items-center justify-between ${
-                    selectedOrders.has(o.id)
-                      ? "bg-blue-50 border-blue-300"
-                      : "bg-gray-50"
-                  }`}
-                >
-                  <div className="flex items-center flex-1">
-                    <input
-                      type="checkbox"
-                      checked={selectedOrders.has(o.id)}
-                      onChange={() => toggleOrderSelection(o.id)}
-                      className="mr-2"
-                    />
-                    <div className="flex-1">
-                      <div className="truncate font-medium text-black">
-                        {o.note || `订单 #${o.id}`}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        状态:{" "}
-                        {o.status === "pending"
-                          ? "待处理"
-                          : o.status === "completed"
-                            ? "已完成"
-                            : o.status === "cancelled"
-                              ? "已取消"
-                              : o.status}
-                        {o.created_at &&
-                          ` | ${new Date(o.created_at).toLocaleTimeString()}`}
+              {(ordersByTable[t.id] || [])
+                .slice()
+                .sort((a, b) => {
+                  // 自然排序：按 note 中的编号或 id 尾段进行排序
+                  const extractId = (note: string | null, id: string) => {
+                    const noteStr = String(note || "");
+                    const idStr = String(id || "");
+                    const m = noteStr.match(/#?(\d+)/);
+                    if (m) return parseInt(m[1], 10);
+                    const tail = idStr.replace(/\D/g, "").slice(-6);
+                    return tail ? parseInt(tail, 10) : Number.MAX_SAFE_INTEGER;
+                  };
+                  return extractId(a.note, a.id) - extractId(b.note, b.id);
+                })
+                .map((o) => (
+                  <div
+                    key={o.id}
+                    className={`border rounded px-3 py-3 sm:p-2 text-sm flex items-center justify-between ${
+                      selectedOrders.has(o.id)
+                        ? "bg-blue-50 border-blue-300"
+                        : "bg-gray-50"
+                    }`}
+                  >
+                    <div className="flex items-center flex-1">
+                      <input
+                        type="checkbox"
+                        checked={selectedOrders.has(o.id)}
+                        onChange={() => toggleOrderSelection(o.id)}
+                        className="mr-3 w-4 h-4"
+                      />
+                      <div className="flex-1">
+                        <div className="truncate font-medium text-black text-sm sm:text-base">
+                          {o.note || `订单 #${o.id}`}
+                        </div>
+                        <div className="text-[11px] sm:text-xs text-gray-500 hidden sm:block">
+                          状态:{" "}
+                          {o.status === "pending"
+                            ? "待处理"
+                            : o.status === "completed"
+                              ? "已完成"
+                              : o.status === "cancelled"
+                                ? "已取消"
+                                : o.status}
+                          {o.created_at &&
+                            ` | ${new Date(o.created_at).toLocaleTimeString()}`}
+                        </div>
                       </div>
                     </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-semibold text-green-600 whitespace-nowrap">
+                        {(Number(orderTotals[o.id] || 0) / 100).toFixed(2)} Kr
+                      </span>
+                      <button
+                        onClick={() => viewOrder(o.id)}
+                        className="px-3 py-2 sm:py-1 bg-blue-500 text-white rounded text-xs hover:bg-blue-600 min-h-11 sm:min-h-0"
+                      >
+                        查看
+                      </button>
+                    </div>
                   </div>
-                  <button
-                    onClick={() => viewOrder(o.id)}
-                    className="px-2 py-1 bg-blue-500 text-white rounded text-xs hover:bg-blue-600"
-                  >
-                    查看
-                  </button>
-                </div>
-              ))}
+                ))}
               {(ordersByTable[t.id] || []).length === 0 && (
                 <div className="text-center text-gray-400 text-sm py-2">
                   暂无订单
@@ -356,10 +407,10 @@ export default function TablesPage() {
             setShowOrderModal(false);
             setSelectedOrder(null);
           }}
-          onAddItems={() => {
+          onAddItems={async () => {
             setShowOrderModal(false);
+            await loadMenuData();
             setShowMenuModal(true);
-            // 确保 selectedOrder 已经设置，这样加菜时会添加到正确的订单
           }}
         />
       )}
@@ -406,7 +457,9 @@ function BulkPaymentModal({
         // 加载菜单数据
         const { data: menuData } = await supabase
           .from("menu_items")
-          .select("id, menu_id, name, price, category_id, is_active, created_at");
+          .select(
+            "id, menu_id, name, price, category_id, is_active, created_at",
+          );
 
         setAllOrderItems(itemsData || []);
         setMenuItems(menuData || []);
@@ -501,7 +554,7 @@ function BulkPaymentModal({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="bg-white rounded-lg p-4 sm:p-6 max-w-full w-full h-[100svh] sm:max-w-6xl sm:h-auto overflow-hidden flex flex-col mobile-modal">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold text-black">
             批量付款 - {selectedOrderIds.length} 个订单
@@ -514,7 +567,7 @@ function BulkPaymentModal({
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto -mx-2 sm:mx-0 px-2 sm:px-0">
           {/* 订单列表 */}
           <div className="mb-4">
             <h3 className="text-lg font-medium text-black mb-2">选中的订单:</h3>
@@ -589,7 +642,7 @@ function BulkPaymentModal({
               </div>
               <div className="text-2xl font-bold text-green-600">
                 {(paymentType === "partial"
-                  ? selectedAmount
+                  ? selectedAmount / 100
                   : totalAmount / 100
                 ).toFixed(2)}{" "}
                 Kr
@@ -599,7 +652,7 @@ function BulkPaymentModal({
         </div>
 
         {/* 操作按钮 */}
-        <div className="mt-4 pt-4 border-t space-y-3">
+        <div className="mt-4 pt-4 border-t space-y-3 sticky bottom-0 bg-white/95 backdrop-blur">
           {/* 买单方式选择 */}
           <div className="flex gap-4">
             <label className="flex items-center">
@@ -685,6 +738,7 @@ function OrderDetailModal({
 }) {
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [paymentType, setPaymentType] = useState<"full" | "partial">("full");
+  const [deleting, setDeleting] = useState(false);
 
   const getMenuItemName = (menuItemId: string) => {
     const item = menuItems.find((item) => item.id === menuItemId);
@@ -724,6 +778,56 @@ function OrderDetailModal({
     setSelectedItems(new Set());
   };
 
+  const handleDeleteSelectedItems = async () => {
+    if (selectedItems.size === 0) return;
+    if (
+      !confirm(
+        `确定要删除选中的 ${selectedItems.size} 个项目吗？此操作不可撤销。`,
+      )
+    ) {
+      return;
+    }
+    try {
+      setDeleting(true);
+      const ids = Array.from(selectedItems);
+      const { error } = await supabase
+        .from("order_items")
+        .delete()
+        .in("id", ids);
+      if (error) throw error;
+      alert("已删除选中项目");
+      onClose();
+      window.location.reload();
+    } catch (e) {
+      console.error("删除选中项目失败:", e);
+      alert("删除选中项目失败: " + String((e as any)?.message || e));
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleDeleteOrder = async () => {
+    if (!confirm("确定要删除整个订单吗？此操作不可撤销。")) return;
+    try {
+      setDeleting(true);
+      // 先删除 order_items，再删除订单
+      await supabase.from("order_items").delete().eq("order_id", order.id);
+      const { error } = await supabase
+        .from("orders")
+        .delete()
+        .eq("id", order.id);
+      if (error) throw error;
+      alert("订单已删除");
+      onClose();
+      window.location.reload();
+    } catch (e) {
+      console.error("删除订单失败:", e);
+      alert("删除订单失败: " + String((e as any)?.message || e));
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   const handlePayment = async () => {
     try {
       if (paymentType === "full") {
@@ -761,7 +865,7 @@ function OrderDetailModal({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="bg-white rounded-lg p-4 sm:p-6 max-w-full w-full h-[100svh] sm:max-w-4xl sm:h-auto overflow-hidden flex flex-col mobile-modal">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold text-black">
             订单详情 - {order.note || `订单 #${order.id}`}
@@ -774,7 +878,7 @@ function OrderDetailModal({
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto -mx-2 sm:mx-0 px-2 sm:px-0">
           {/* 订单信息 */}
           <div className="bg-gray-50 rounded-lg p-4 mb-4">
             <div className="text-sm text-gray-600">
@@ -837,7 +941,7 @@ function OrderDetailModal({
               </div>
               <div className="text-2xl font-bold text-green-600">
                 {(paymentType === "partial"
-                  ? selectedAmount
+                  ? selectedAmount / 100
                   : totalAmount / 100
                 ).toFixed(2)}{" "}
                 Kr
@@ -847,7 +951,7 @@ function OrderDetailModal({
         </div>
 
         {/* 操作按钮 */}
-        <div className="mt-4 pt-4 border-t space-y-3">
+        <div className="mt-4 pt-4 border-t space-y-3 sticky bottom-0 bg-white/95 backdrop-blur">
           {/* 买单方式选择 */}
           <div className="flex gap-4">
             <label className="flex items-center">
@@ -911,6 +1015,20 @@ function OrderDetailModal({
               ➕ 加菜
             </button>
             <button
+              onClick={handleDeleteSelectedItems}
+              disabled={deleting || selectedItems.size === 0}
+              className="flex-1 py-2 bg-red-500 text-white rounded hover:bg-red-600 font-medium disabled:opacity-50"
+            >
+              🗑️ 删除所选
+            </button>
+            <button
+              onClick={handleDeleteOrder}
+              disabled={deleting}
+              className="flex-1 py-2 bg-red-600 text-white rounded hover:bg-red-700 font-medium disabled:opacity-50"
+            >
+              ⚠️ 删除订单
+            </button>
+            <button
               onClick={onClose}
               className="flex-1 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 font-medium"
             >
@@ -946,6 +1064,74 @@ function MenuSelectionModal({
   const [selectedItems, setSelectedItems] = useState<
     { itemId: string; quantity: number }[]
   >([]);
+  const [localCategories, setLocalCategories] =
+    useState<MenuCategory[]>(categories);
+  const [localMenuItems, setLocalMenuItems] = useState<MenuItem[]>(menuItems);
+  const [localError, setLocalError] = useState<string | null>(null);
+  // Mobile collapsible panels (默认展开“已选”)
+  const [showCatMobile, setShowCatMobile] = useState<boolean>(false);
+  const [showSelectedMobile, setShowSelectedMobile] = useState<boolean>(true);
+
+  // 自然排序 key 生成：前缀（字母）+ 数字
+  const naturalKey = (id?: string | null) => {
+    if (!id) return { prefix: "", num: Number.POSITIVE_INFINITY };
+    const match = String(id).match(/^(\D*)(\d*)$/);
+    const prefix = (match?.[1] || "").toUpperCase();
+    const num = match?.[2]
+      ? parseInt(match[2] || "0", 10)
+      : Number.POSITIVE_INFINITY;
+    return { prefix, num };
+  };
+
+  // 同步父级数据到本地
+  useEffect(() => {
+    setLocalCategories(categories);
+  }, [categories]);
+  useEffect(() => {
+    setLocalMenuItems(menuItems);
+  }, [menuItems]);
+
+  // 若未有激活分类而分类已加载，则自动选中第一个
+  useEffect(() => {
+    if (!activeCategory && localCategories.length > 0) {
+      onCategoryChange(localCategories[0].id);
+    }
+  }, [activeCategory, localCategories, onCategoryChange]);
+
+  // 兜底：如果父级传入为空，则在弹窗内自发加载一次，避免出现空白
+  useEffect(() => {
+    const fallbackLoad = async () => {
+      try {
+        if (localCategories.length === 0 || localMenuItems.length === 0) {
+          const [{ data: cats }, { data: items }] = await Promise.all([
+            supabase
+              .from("menu_categories")
+              .select("id, name, sort_order, is_active")
+              .order("sort_order"),
+            supabase
+              .from("menu_items")
+              .select("id, menu_id, name, price, category_id, is_active")
+              .order("id"),
+          ]);
+          const c = (cats as MenuCategory[]) || [];
+          const m = (items as MenuItem[]) || [];
+          if (c.length > 0) setLocalCategories(c);
+          if (m.length > 0) setLocalMenuItems(m);
+          if (!activeCategory && c.length > 0) onCategoryChange(c[0].id);
+        }
+      } catch (e: unknown) {
+        setLocalError(
+          `加载菜单失败: ${e instanceof Error ? e.message : String(e)}`,
+        );
+      }
+    };
+    fallbackLoad();
+  }, [
+    activeCategory,
+    localCategories.length,
+    localMenuItems.length,
+    onCategoryChange,
+  ]);
 
   const addItemToSelection = (itemId: string) => {
     const existing = selectedItems.find((item) => item.itemId === itemId);
@@ -994,7 +1180,7 @@ function MenuSelectionModal({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="bg-white rounded-lg p-4 sm:p-6 max-w-full w-full h-[100svh] sm:max-w-4xl sm:h-auto overflow-hidden flex flex-col mobile-modal">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold">选择菜品</h2>
           <button
@@ -1004,13 +1190,33 @@ function MenuSelectionModal({
             ✕
           </button>
         </div>
+        {/* Mobile toggles */}
+        <div className="sm:hidden grid grid-cols-2 gap-2 mb-2">
+          <button
+            onClick={() => setShowCatMobile((v) => !v)}
+            className={`py-2 rounded font-medium ${showCatMobile ? "bg-blue-600 text-white" : "bg-blue-500 text-white"} hover:bg-blue-600`}
+          >
+            {showCatMobile ? "收起分类" : "展开分类"}
+          </button>
+          <button
+            onClick={() => setShowSelectedMobile((v) => !v)}
+            className={`py-2 rounded font-medium ${showSelectedMobile ? "bg-emerald-600 text-white" : "bg-emerald-500 text-white"} hover:bg-emerald-600`}
+          >
+            {showSelectedMobile ? "收起已选" : `已选(${selectedItems.length})`}
+          </button>
+        </div>
 
-        <div className="flex-1 flex gap-4 overflow-hidden">
+        <div className="flex-1 flex flex-col sm:flex-row gap-4 overflow-hidden">
           {/* 左侧：菜单分类 */}
-          <div className="w-36 flex flex-col">
+          <div
+            className={`${showCatMobile ? "block" : "hidden"} sm:block w-full sm:w-36 flex flex-col sm:flex-none`}
+          >
             <h3 className="font-medium mb-3 text-black">菜单分类</h3>
-            <div className="flex-1 overflow-y-auto space-y-2">
-              {categories.map((cat) => (
+            <div className="max-h-[30vh] sm:max-h-none flex-1 overflow-y-auto space-y-2">
+              {localCategories.length === 0 && (
+                <div className="text-xs text-gray-500">暂无分类</div>
+              )}
+              {localCategories.map((cat) => (
                 <button
                   key={cat.id}
                   onClick={() => onCategoryChange(cat.id)}
@@ -1027,24 +1233,40 @@ function MenuSelectionModal({
           </div>
 
           {/* 中间：菜品列表 */}
-          <div className="flex-1 flex flex-col">
+          <div className="flex-1 flex flex-col order-panel-fixed min-w-0">
             <h3 className="font-medium mb-3 text-black">菜品列表</h3>
             <div className="flex-1 overflow-y-auto space-y-2">
-              {menuItems
-                .filter(
-                  (item) =>
-                    item.category_id === activeCategory && item.is_active,
-                )
+              {localError && (
+                <div className="text-xs text-red-600">{localError}</div>
+              )}
+              {localMenuItems.filter((i) => i.category_id === activeCategory)
+                .length === 0 && (
+                <div className="text-xs text-gray-500">暂无菜品</div>
+              )}
+              {localMenuItems
+                .filter((item) => item.category_id === activeCategory)
+                .slice()
+                .sort((a, b) => {
+                  const ak = naturalKey(a.menu_id);
+                  const bk = naturalKey(b.menu_id);
+                  if (ak.prefix !== bk.prefix)
+                    return ak.prefix.localeCompare(bk.prefix);
+                  if (ak.num !== bk.num) return ak.num - bk.num;
+                  return (a.name || "").localeCompare(b.name || "");
+                })
                 .map((item) => (
                   <div
                     key={item.id}
-                    className="flex items-center justify-between p-3 border rounded"
+                    className="flex items-center justify-between p-3 border rounded gap-3"
                   >
-                    <div className="flex-1">
-                      <div className="font-medium text-black truncate whitespace-nowrap">
+                    <div className="flex-1 min-w-0">
+                      <div
+                        className="font-medium text-black truncate whitespace-nowrap"
+                        title={`${item.menu_id ? `#${item.menu_id}` : `#${String(item.id).slice(-6)}`} ${item.name}`}
+                      >
                         {item.menu_id
                           ? `#${item.menu_id}`
-                          : `#${String(item.id).slice(-6)}`} {" "}
+                          : `#${String(item.id).slice(-6)}`}{" "}
                         {item.name}
                       </div>
                       <div className="text-sm text-black">
@@ -1053,7 +1275,7 @@ function MenuSelectionModal({
                     </div>
                     <button
                       onClick={() => addItemToSelection(item.id)}
-                      className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+                      className="px-3 py-2 sm:py-1 bg-blue-500 text-white rounded hover:bg-blue-600 flex-shrink-0"
                     >
                       添加
                     </button>
@@ -1063,7 +1285,9 @@ function MenuSelectionModal({
           </div>
 
           {/* 右侧：已选择的菜品 */}
-          <div className="w-96 border-l pl-4">
+          <div
+            className={`${showSelectedMobile ? "block" : "hidden"} sm:block w-full sm:w-96 border-l sm:pl-4 pl-0 order-panel-fixed`}
+          >
             <h3 className="font-medium mb-3 text-black">已选择的菜品</h3>
             <div className="space-y-3 max-h-80 overflow-y-auto">
               {selectedItems.map((item) => (

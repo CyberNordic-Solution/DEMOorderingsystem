@@ -1,53 +1,53 @@
-# 餐厅点餐管理系统
+# Restaurant Ordering Management System
 
-一个基于 Next.js 和 Supabase 的现代化餐厅点餐管理系统，支持餐桌管理、菜单管理、订单处理和支付记录。
+A modern ordering system built with Next.js and Supabase. It supports table management, menu management, order processing and payment history.
 
-## 🚀 功能特性
+## 🚀 Features
 
-### 📱 用户界面
+### 📱 UI
 
-- **响应式设计**：支持桌面、平板和手机
-- **现代化UI**：使用 Tailwind CSS 构建的美观界面
-- **实时更新**：数据实时同步，无需手动刷新
+- **Responsive**: Desktop / Tablet / Mobile
+- **Modern UI**: Tailwind CSS based components
+- **Realtime**: Supabase realtime data sync
 
-### 🍽️ 核心功能
+### 🍽️ Core
 
-- **餐桌管理**：动态设置餐桌数量，自动同步
-- **菜单管理**：分类管理，菜品上下架，批量操作
-- **订单处理**：创建订单，加菜，灵活买单
-- **支付记录**：完整的支付历史记录
+- **Tables**: Dynamic table count with auto sync
+- **Menu**: Category management, item on/off, bulk actions
+- **Orders**: Create order, add items, flexible checkout
+- **History**: Complete payment history
 
-### 💳 支付系统
+### 💳 Payments
 
-- **全买单**：一次性支付整个订单
-- **选择买单**：选择特定菜品进行支付
-- **批量付款**：多个订单同时处理
-- **支付记录**：详细的支付历史追踪
+- **Full pay**: Pay all items in an order
+- **Partial pay**: Pay selected items
+- **Bulk pay**: Pay multiple orders at once
+- **Audit**: Detailed payment records
 
-### 🔧 管理功能
+### 🔧 Admin
 
-- **菜单设置**：分类管理，菜品管理，价格调整
-- **餐桌设置**：动态调整餐桌数量
-- **状态指示**：红绿灯显示菜品上下架状态
+- **Menu settings**: Manage categories/items, adjust prices
+- **Table settings**: Adjust number of tables
+- **Status lights**: Up/Down indicator for items
 
-## 🛠️ 技术栈
+## 🛠️ Tech Stack
 
-- **前端**：Next.js 15.5.2, React, TypeScript
-- **样式**：Tailwind CSS
-- **后端**：Supabase (PostgreSQL)
-- **认证**：Supabase Auth
-- **部署**：Vercel
+- **Frontend**: Next.js 15.5.2, React, TypeScript
+- **Styles**: Tailwind CSS
+- **Backend**: Supabase (PostgreSQL)
+- **Auth**: Supabase Auth
+- **Deploy**: Vercel
 
-## 🚀 快速开始
+## 🚀 Quick Start
 
-### 1. 克隆项目
+### 1. Clone
 
 ```bash
 git clone <repository-url>
 cd orderingsystem
 ```
 
-### 2. 安装依赖
+### 2. Install
 
 ```bash
 npm install
@@ -55,7 +55,7 @@ npm install
 yarn install
 ```
 
-### 3. 环境配置
+### 3. Environment
 
 创建 `.env.local` 文件：
 
@@ -64,7 +64,7 @@ NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
-### 4. 启动开发服务器
+### 4. Dev Server
 
 ```bash
 npm run dev
@@ -72,11 +72,11 @@ npm run dev
 yarn dev
 ```
 
-访问 [http://localhost:3000](http://localhost:3000) 查看应用。
+Open [http://localhost:3000](http://localhost:3000).
 
-## 📊 数据库设置
+## 📊 Database
 
-### 环境变量
+### Env Vars
 
 在 Vercel 项目设置或本地 `.env.local` 中配置：
 
@@ -85,7 +85,7 @@ NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
-### 数据库架构
+### Schema
 
 ```sql
 -- 应用设置
@@ -164,14 +164,14 @@ CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items(order_id);
 CREATE INDEX IF NOT EXISTS idx_order_items_is_paid ON order_items(is_paid);
 ```
 
-### 添加完成时间字段
+### Extra Columns
 
 ```sql
 -- 为orders表添加completed_at字段
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS completed_at TIMESTAMPTZ;
 ```
 
-### 行级安全策略 (RLS)
+### Row Level Security (RLS)
 
 ```sql
 -- 启用RLS
@@ -206,62 +206,62 @@ CREATE POLICY "profiles_read" ON profiles FOR SELECT USING (true);
 CREATE POLICY "profiles_write" ON profiles FOR ALL USING (true);
 ```
 
-## 📱 使用指南
+## 📱 Usage
 
-### 1. 登录系统
+### 1. Login
 
 - 首次使用需要注册账号
 - 登录后进入主界面
 
-### 2. 设置餐桌
+### 2. Tables
 
 - 进入"设置"页面
 - 调整餐桌数量
 - 点击"保存并同步桌台"
 
-### 3. 管理菜单
+### 3. Menu
 
 - 进入"设置" → "菜单设置"
 - 创建分类和菜品
 - 设置价格和状态
 
-### 4. 处理订单
+### 4. Orders
 
 - 在"桌台"页面查看所有餐桌
 - 点击"+新增订单"创建订单
 - 选择菜品和数量
 - 支持加菜功能
 
-### 5. 处理付款
+### 5. Payments
 
 - **全买单**：一次性支付整个订单
 - **选择买单**：选择特定菜品支付
 - **批量付款**：多个订单同时处理
 
-### 6. 查看记录
+### 6. History
 
 - 进入"支付记录"查看历史
 - 支持按时间排序
 - 显示详细的订单信息
 
-## 🚀 部署
+## 🚀 Deployment
 
-### Vercel 部署
+### Vercel
 
 1. 连接 GitHub 仓库到 Vercel
 2. 配置环境变量
 3. 自动部署
 
-### 环境变量配置
+### Env on Vercel
 
 在 Vercel 项目设置中配置：
 
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 
-## 🔧 开发
+## 🔧 Development
 
-### 项目结构
+### Structure
 
 ```
 src/
@@ -276,7 +276,7 @@ src/
 └── types/                 # TypeScript 类型定义
 ```
 
-### 脚本命令
+### Scripts
 
 ```bash
 npm run dev      # 开发服务器
@@ -285,14 +285,14 @@ npm run start    # 启动生产服务器
 npm run lint     # 代码检查
 ```
 
-## 🤝 贡献
+## 🤝 Contribute
 
 欢迎提交 Issue 和 Pull Request！
 
-## 📄 许可证
+## 📄 License
 
 MIT License
 
-## 📞 支持
+## 📞 Support
 
 如有问题，请提交 Issue 或联系开发团队。
