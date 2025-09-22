@@ -53,9 +53,7 @@ export default function OrderDetailPage({
         const menuItemIds = itemsData.map((item) => item.menu_item_id);
         const { data: menuData } = await supabase
           .from("menu_items")
-          .select(
-            "id, menu_id, name, price, category_id, is_active, created_at",
-          )
+          .select("id, menu_id, name, price, category_id, is_active, created_at")
           .in("id", menuItemIds);
         setMenuItems(menuData || []);
       }
@@ -162,83 +160,72 @@ export default function OrderDetailPage({
 
           {/* 菜品列表 */}
           <div className="p-4 sm:p-6">
-            <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-gray-800">
-              菜品明细
-            </h2>
+            <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-gray-800">菜品明细</h2>
             <div className="space-y-4">
               {orderItems
                 .slice()
                 .sort((a, b) => {
                   // 按 menu_items 的自然顺序排序（基于 menu_id 的自然排序）
-                  const get = (id: string) =>
-                    menuItems.find((m) => m.id === id);
+                  const get = (id: string) => menuItems.find((m) => m.id === id);
                   const key = (mid?: string | null) => {
                     const mm = get(mid || "");
                     const raw = mm?.menu_id || "";
                     const match = raw.match(/^(\D*)(\d*)$/);
                     const prefix = (match?.[1] || "").toUpperCase();
-                    const num = match?.[2]
-                      ? parseInt(match[2] || "0", 10)
-                      : Number.POSITIVE_INFINITY;
+                    const num = match?.[2] ? parseInt(match[2] || "0", 10) : Number.POSITIVE_INFINITY;
                     return { prefix, num };
                   };
                   const ak = key(a.menu_item_id);
                   const bk = key(b.menu_item_id);
-                  if (ak.prefix !== bk.prefix)
-                    return ak.prefix.localeCompare(bk.prefix);
+                  if (ak.prefix !== bk.prefix) return ak.prefix.localeCompare(bk.prefix);
                   if (ak.num !== bk.num) return ak.num - bk.num;
                   return 0;
                 })
                 .map((item, index) => (
-                  <div
-                    key={item.id}
-                    className="bg-gray-50 rounded-lg p-4 border-l-4 border-blue-500"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center mb-2">
-                          <span className="text-gray-500 text-sm mr-3">
-                            #{index + 1}
+                <div
+                  key={item.id}
+                  className="bg-gray-50 rounded-lg p-4 border-l-4 border-blue-500"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center mb-2">
+                        <span className="text-gray-500 text-sm mr-3">
+                          #{index + 1}
+                        </span>
+                        <div className="font-semibold text-base sm:text-lg text-gray-800 overflow-hidden">
+                          <span className="block truncate whitespace-nowrap" title={getMenuItemName(item.menu_item_id)}>
+                            {getMenuItemId(item.menu_item_id)}{" "}
+                            {getMenuItemName(item.menu_item_id)}
                           </span>
-                          <div className="font-semibold text-base sm:text-lg text-gray-800 overflow-hidden">
-                            <span
-                              className="block truncate whitespace-nowrap"
-                              title={getMenuItemName(item.menu_item_id)}
-                            >
-                              {getMenuItemId(item.menu_item_id)}{" "}
-                              {getMenuItemName(item.menu_item_id)}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="text-gray-600 ml-8 text-sm">
-                          单价: {(item.unit_price / 100).toFixed(2)} Kr
                         </div>
                       </div>
-                      <div className="text-right">
-                        <div className="text-gray-600 mb-1 text-sm">
-                          {item.quantity} × {(item.unit_price / 100).toFixed(2)}{" "}
-                          Kr
-                        </div>
-                        <div className="text-lg sm:text-xl font-bold text-green-600">
-                          {(item.price / 100).toFixed(2)} Kr
-                        </div>
-                        {item.is_paid && (
-                          <div className="text-xs text-green-600 mt-1">
-                            ✓ 已付款
-                          </div>
-                        )}
+                      <div className="text-gray-600 ml-8 text-sm">
+                        单价: {(item.unit_price / 100).toFixed(2)} Kr
                       </div>
                     </div>
+                    <div className="text-right">
+                      <div className="text-gray-600 mb-1 text-sm">
+                        {item.quantity} × {(item.unit_price / 100).toFixed(2)}{" "}
+                        Kr
+                      </div>
+                      <div className="text-lg sm:text-xl font-bold text-green-600">
+                        {(item.price / 100).toFixed(2)} Kr
+                      </div>
+                      {item.is_paid && (
+                        <div className="text-xs text-green-600 mt-1">
+                          ✓ 已付款
+                        </div>
+                      )}
+                    </div>
                   </div>
-                ))}
+                </div>
+              ))}
             </div>
 
             {/* 总计 */}
             <div className="mt-6 sm:mt-8 pt-4 sm:pt-6 border-t-2 border-gray-200">
               <div className="flex justify-between items-center bg-green-50 rounded-lg p-4">
-                <div className="text-lg sm:text-xl font-bold text-gray-800">
-                  总计
-                </div>
+                <div className="text-lg sm:text-xl font-bold text-gray-800">总计</div>
                 <div className="text-2xl sm:text-3xl font-bold text-green-600">
                   {(totalAmount / 100).toFixed(2)} Kr
                 </div>
