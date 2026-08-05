@@ -1,14 +1,6 @@
 name: Temporary UK Norway Import Radar
 
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - tools/import_radar_uk_no.py
-      - tools/import_radar_uk_no_bulk.py
-      - tools/import_radar_uk_no_bulk_v2.py
-      - tools/import_radar_uk_no_bulk_v3.py
-      - .github/workflows/temp-import-radar-uk-no.yml
   workflow_dispatch:
 
 permissions:
@@ -28,11 +20,6 @@ jobs:
         env:
           IMPORT_RADAR_OUT: import-radar-uk-no-output
         run: python tools/import_radar_uk_no_bulk_v3.py
-      - name: Show summary
-        if: always()
-        run: |
-          find import-radar-uk-no-output -maxdepth 1 -type f -printf '%f %s bytes\n' 2>/dev/null || true
-          test -f import-radar-uk-no-output/run_metadata.json && cat import-radar-uk-no-output/run_metadata.json || true
       - name: Upload results
         if: success()
         uses: actions/upload-artifact@v4
