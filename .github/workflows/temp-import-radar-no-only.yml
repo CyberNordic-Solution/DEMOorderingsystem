@@ -1,0 +1,36 @@
+name: Temporary Norway Import Radar
+
+on:
+  push:
+    branches:
+      - "temp/import-radar-uk-no-20260805"
+    paths:
+      - tools/import_radar_no_only.py
+      - .github/workflows/temp-import-radar-no-only.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fetch-no:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --disable-pip-version-check requests
+      - name: Fetch Norway Statbank data
+        env:
+          IMPORT_RADAR_OUT: import-radar-no-output
+        run: python tools/import_radar_no_only.py
+      - name: Upload Norway results
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: import-radar-no-raw
+          path: import-radar-no-output/
+          retention-days: 1
+          if-no-files-found: error
