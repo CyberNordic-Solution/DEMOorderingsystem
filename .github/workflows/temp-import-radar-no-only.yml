@@ -1,5 +1,6 @@
 name: Temporary Norway Import Radar
 
+# Isolated public-data job for the Norway market.
 on:
   push:
     branches:
