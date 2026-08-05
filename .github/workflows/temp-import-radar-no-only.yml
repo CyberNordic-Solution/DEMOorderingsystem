@@ -1,10 +1,8 @@
 name: Temporary Norway Import Radar
 
-# Isolated public-data job for the Norway market.
 on:
-  push:
-    branches:
-      - "temp/import-radar-uk-no-20260805"
+  pull_request:
+    branches: [main]
     paths:
       - tools/import_radar_no_only.py
       - .github/workflows/temp-import-radar-no-only.yml
