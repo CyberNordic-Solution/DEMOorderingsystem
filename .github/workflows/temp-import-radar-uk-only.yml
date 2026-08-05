@@ -1,6 +1,11 @@
 name: Temporary UK Import Radar
 
 on:
+  pull_request:
+    branches: [main]
+    paths:
+      - tools/import_radar_uk_complete.py
+      - .github/workflows/temp-import-radar-uk-only.yml
   workflow_dispatch:
 
 permissions:
@@ -9,7 +14,7 @@ permissions:
 jobs:
   fetch-uk:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -19,7 +24,7 @@ jobs:
       - name: Fetch UK bulk data
         env:
           IMPORT_RADAR_OUT: import-radar-uk-output
-        run: python tools/import_radar_uk_only.py
+        run: python tools/import_radar_uk_complete.py
       - name: Upload UK results
         if: success()
         uses: actions/upload-artifact@v4
