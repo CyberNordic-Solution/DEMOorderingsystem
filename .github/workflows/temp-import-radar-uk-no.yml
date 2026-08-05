@@ -6,6 +6,7 @@ on:
     paths:
       - tools/import_radar_uk_no.py
       - tools/import_radar_uk_no_bulk.py
+      - tools/import_radar_uk_no_bulk_v2.py
       - .github/workflows/temp-import-radar-uk-no.yml
   workflow_dispatch:
 
@@ -25,7 +26,7 @@ jobs:
       - name: Fetch and clean UK Norway data
         env:
           IMPORT_RADAR_OUT: import-radar-uk-no-output
-        run: python tools/import_radar_uk_no_bulk.py
+        run: python tools/import_radar_uk_no_bulk_v2.py
       - name: Show summary
         if: always()
         run: |
