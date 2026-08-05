@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - tools/import_radar_uk_no.py
+      - tools/import_radar_uk_no_bulk.py
       - .github/workflows/temp-import-radar-uk-no.yml
   workflow_dispatch:
 
@@ -14,7 +15,7 @@ permissions:
 jobs:
   fetch-uk-no:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -24,7 +25,7 @@ jobs:
       - name: Fetch and clean UK Norway data
         env:
           IMPORT_RADAR_OUT: import-radar-uk-no-output
-        run: python tools/import_radar_uk_no.py
+        run: python tools/import_radar_uk_no_bulk.py
       - name: Show summary
         if: always()
         run: |
