@@ -1,12 +1,6 @@
 name: Temporary UK Import Radar
 
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - tools/import_radar_uk_only.py
-      - tools/import_radar_uk_no_bulk.py
-      - .github/workflows/temp-import-radar-uk-only.yml
   workflow_dispatch:
 
 permissions:
